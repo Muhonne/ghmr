@@ -86,7 +86,7 @@ export default function App() {
                         pull_number: pull.number
                     })
 
-                    let savedViewedForMr: Record<string, boolean> = {};
+                    let savedViewedForMr: Record<string, string> = {};
                     if (window.electron) {
                         try {
                             savedViewedForMr = await window.electron.loadReviews(pull.id);
@@ -115,7 +115,7 @@ export default function App() {
                             deletions: f.deletions,
                             patch: f.patch,
                             sha: f.sha,
-                            viewed: savedViewedForMr[f.sha] || false
+                            viewed: savedViewedForMr[f.filename] === f.sha
                         }))
                     }
                 } catch (e) {
@@ -238,10 +238,14 @@ export default function App() {
 
         const currentMr = mrs.find(m => m.id === mrId)
         if (currentMr) {
-            const viewedMap: Record<string, boolean> = {}
+            const viewedMap: Record<string, string> = {}
             currentMr.files.forEach(f => {
-                if (f.filename === filename) viewedMap[f.sha] = !f.viewed
-                else if (f.viewed) viewedMap[f.sha] = true
+                const isTarget = f.filename === filename;
+                const willBeViewed = isTarget ? !f.viewed : f.viewed;
+
+                if (willBeViewed) {
+                    viewedMap[f.filename] = f.sha;
+                }
             })
 
             if (window.electron) await window.electron.saveReview(mrId, viewedMap)

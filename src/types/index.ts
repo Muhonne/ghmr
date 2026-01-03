@@ -33,8 +33,8 @@ declare global {
         electron?: {
             loadConfig: () => Promise<any>;
             saveConfig: (config: any) => Promise<boolean>;
-            loadReviews: (mrId: number) => Promise<Record<string, boolean>>;
-            saveReview: (mrId: number, viewedMap: Record<string, boolean>) => Promise<boolean>;
+            loadReviews: (mrId: number) => Promise<Record<string, string>>;
+            saveReview: (mrId: number, viewedMap: Record<string, string>) => Promise<boolean>;
         }
     }
 }
