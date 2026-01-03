@@ -23,7 +23,6 @@ A secure, lightweight desktop application for reviewing GitHub Pull Requests wit
 
 ## Security Features 🔐
 
-See [SECURITY.md](./SECURITY.md) for our security policy.
 
 This application implements enterprise-grade security:
 
@@ -36,7 +35,6 @@ This application implements enterprise-grade security:
 - ✅ **No Console Logs in Production** - Stripped during build
 - ✅ **No Telemetry** - All data stays on your device
 
-For the complete security audit, see [SECURITY_AUDIT.md](./SECURITY_AUDIT.md)
 
 ## Tech Stack
 
