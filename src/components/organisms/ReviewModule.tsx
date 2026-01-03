@@ -116,6 +116,24 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                     compareMethod={DiffMethod.WORDS}
                                     hideLineNumbers={false}
                                     styles={{
+                                        lineNumber: {
+                                            fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
+                                            fontSize: 'var(--app-font-size)',
+                                            lineHeight: '1.4',
+                                            paddingTop: '2px',
+                                            paddingBottom: '2px',
+                                        },
+                                        contentText: {
+                                            fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
+                                            fontSize: 'var(--app-font-size)',
+                                            lineHeight: '1.4',
+                                            paddingTop: '2px',
+                                            paddingBottom: '2px',
+                                        },
+                                        line: {
+                                            marginTop: '0px',
+                                            marginBottom: '0px',
+                                        },
                                         variables: {
                                             dark: {
                                                 diffViewerBackground: '#0d1117',
