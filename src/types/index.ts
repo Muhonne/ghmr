@@ -7,6 +7,7 @@ export interface MergeRequest {
     repository: string
     base_ref: string
     head_ref: string
+    head_sha: string
     status: 'open' | 'closed' | 'merged'
     files: MRFile[]
 }
