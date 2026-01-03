@@ -9,7 +9,6 @@ import { ReviewModule } from './components/organisms/ReviewModule'
 import { Settings } from './components/organisms/Settings'
 import { isFileViewed } from './utils/reReview'
 import { secureStorage } from './utils/secureStorage'
-import { sanitizeTokenForLogging } from './utils/tokenValidation'
 
 export default function App() {
     const [token, setToken] = useState<string>('')
@@ -78,6 +77,12 @@ export default function App() {
             const results = await Promise.all(pulls.items.map(async (pull: any): Promise<MergeRequest | null> => {
                 try {
                     const [owner, repo] = pull.repository_url.split('/').slice(-2)
+                    const { data: prDetails } = await octokit.rest.pulls.get({
+                        owner,
+                        repo,
+                        pull_number: pull.number
+                    })
+
                     const { data: files } = await octokit.rest.pulls.listFiles({
                         owner,
                         repo,
@@ -93,8 +98,9 @@ export default function App() {
                         author: pull.user.login,
                         created_at: pull.created_at,
                         repository: `${owner}/${repo}`,
-                        base_ref: pull.base?.ref || 'main',
-                        head_ref: pull.head?.ref || 'branch',
+                        base_ref: prDetails.base.ref,
+                        head_ref: prDetails.head.ref,
+                        head_sha: prDetails.head.sha,
                         status: 'open',
                         files: (files || []).map((f: any) => ({
                             filename: f.filename,
@@ -409,6 +415,7 @@ export default function App() {
                         isResizing={isResizing}
                         startResizing={startResizing}
                         scrollRef={reviewScrollRef}
+                        octokit={octokit}
                     />
                 )}
                 {view === 'settings' && (

@@ -27,10 +27,11 @@ interface ReviewModuleProps {
     isResizing: boolean;
     startResizing: (e: React.MouseEvent) => void;
     scrollRef: React.RefObject<HTMLDivElement | null>;
+    octokit: any;
 }
 
 const parsePatch = (patch?: string) => {
-    if (!patch) return { oldValue: '', newValue: '' };
+    if (!patch) return { oldValue: '', newValue: '', isEmpty: true };
 
     const lines = patch.split('\n');
     const oldLines: string[] = [];
@@ -38,8 +39,6 @@ const parsePatch = (patch?: string) => {
 
     lines.forEach((line) => {
         if (line.startsWith('@@')) {
-            // Add a visual break between hunks if needed, but for now just skip header content
-            // or push an empty line to maintain some separation
             if (oldLines.length > 0) {
                 oldLines.push(' ');
                 newLines.push(' ');
@@ -58,6 +57,7 @@ const parsePatch = (patch?: string) => {
     return {
         oldValue: oldLines.join('\n'),
         newValue: newLines.join('\n'),
+        isEmpty: false
     };
 };
 
@@ -68,10 +68,70 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
     fileListWidth,
     isResizing,
     startResizing,
-    scrollRef
+    scrollRef,
+    octokit
 }) => {
+    const [extraContent, setExtraContent] = React.useState<string | null>(null);
+    const [imageUrl, setImageUrl] = React.useState<string | null>(null);
+    const [loadingContent, setLoadingContent] = React.useState(false);
     const currentFile = mr.files[currentIndex];
-    const { oldValue, newValue } = parsePatch(currentFile?.patch);
+
+    const isImage = React.useMemo(() => {
+        if (!currentFile?.filename) return false;
+        const ext = currentFile.filename.split('.').pop()?.toLowerCase();
+        return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp'].includes(ext || '');
+    }, [currentFile]);
+
+    React.useEffect(() => {
+        setExtraContent(null);
+        setImageUrl(null);
+        setLoadingContent(false);
+    }, [currentIndex]);
+
+    const handleFetchContent = async () => {
+        if (!octokit || !currentFile) return;
+        setLoadingContent(true);
+        try {
+            const [owner, repo] = mr.repository.split('/');
+            const { data: contentData } = await octokit.rest.repos.getContent({
+                owner,
+                repo,
+                path: currentFile.filename,
+                ref: mr.head_sha // Precise SHA
+            });
+
+            if ('content' in contentData) {
+                if (isImage) {
+                    // For images, we can use the download_url or a data URI
+                    if (contentData.download_url) {
+                        setImageUrl(contentData.download_url);
+                    } else {
+                        const ext = currentFile.filename.split('.').pop()?.toLowerCase();
+                        const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
+                        setImageUrl(`data:${mimeType};base64,${contentData.content.replace(/\n/g, '')}`);
+                    }
+                } else {
+                    const decoded = atob(contentData.content.replace(/\n/g, ''));
+                    // Create a synthetic patch: all additions
+                    const syntheticPatch = `@@ -0,0 +1,${decoded.split('\n').length} @@\n` +
+                        decoded.split('\n').map(line => `+${line}`).join('\n');
+                    setExtraContent(syntheticPatch);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch full file content:", error);
+        } finally {
+            setLoadingContent(false);
+        }
+    };
+
+    React.useEffect(() => {
+        if (isImage && !imageUrl && !loadingContent) {
+            handleFetchContent();
+        }
+    }, [isImage, currentIndex, imageUrl, loadingContent, octokit, currentFile]);
+
+    const { oldValue, newValue, isEmpty } = parsePatch(currentFile?.patch || extraContent || undefined);
 
     const highlightSyntax = (str: string) => {
         if (!currentFile?.filename) return <span style={{ display: 'inline' }}>{str}</span>;
@@ -154,76 +214,139 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
 
                     <div ref={scrollRef} style={{ overflowY: 'auto', overflowX: 'hidden', padding: '20px', flexGrow: 1 }}>
                         <div style={{ minWidth: '800px' }}>
-                            {/* Diff Preview */}
-                            <div style={{ background: '#0d1117', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
-                                <ReactDiffViewer
-                                    oldValue={oldValue}
-                                    newValue={newValue}
-                                    splitView={true}
-                                    useDarkTheme={true}
-                                    compareMethod={DiffMethod.WORDS}
-                                    hideLineNumbers={false}
-                                    renderContent={highlightSyntax}
-                                    styles={{
-                                        diffContainer: {
-                                            lineHeight: 'normal',
-                                            tableLayout: 'fixed',
-                                            width: '100%',
-                                        },
-                                        content: {
-                                            width: '50%',
-                                        },
-                                        gutter: {
-                                            minWidth: '50px',
-                                            width: '50px',
-                                            paddingLeft: '10px',
-                                            paddingRight: '10px',
-                                        },
-                                        lineNumber: {
-                                            fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
-                                            fontSize: 'var(--app-font-size)',
-                                            lineHeight: 'normal !important',
-                                            paddingTop: '2px',
-                                            paddingBottom: '2px',
-                                            minWidth: '30px',
-                                        },
-                                        contentText: {
-                                            fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
-                                            fontSize: 'var(--app-font-size)',
-                                            lineHeight: 'normal !important',
-                                            paddingTop: '2px',
-                                            paddingBottom: '2px',
-                                            paddingLeft: '10px',
-                                            paddingRight: '10px',
-                                            wordBreak: 'break-all',
-                                            whiteSpace: 'pre-wrap',
-                                        },
-                                        line: {
-                                            marginTop: '0px',
-                                            marginBottom: '0px',
-                                        },
-                                        variables: {
-                                            dark: {
-                                                diffViewerBackground: '#0d1117',
-                                                gutterBackground: '#0d1117',
-                                                addedBackground: '#2ea04326',
-                                                addedGutterBackground: '#2ea0434d',
-                                                removedBackground: '#f8514926',
-                                                removedGutterBackground: '#f851494d',
-                                                wordAddedBackground: '#2ea04366',
-                                                wordRemovedBackground: '#f8514966',
-                                                codeFoldGutterBackground: '#161b22',
-                                                codeFoldBackground: '#0d1117',
-                                                emptyLineBackground: '#0d1117',
-                                                gutterColor: '#8b949e',
-                                                codeFoldContentColor: '#8b949e',
-                                                diffViewerTitleBackground: '#161b22',
-                                                diffViewerTitleColor: '#c9d1d9',
+                            {imageUrl ? (
+                                <div style={{
+                                    background: '#0d1117',
+                                    borderRadius: '8px',
+                                    padding: '40px',
+                                    textAlign: 'center',
+                                    border: '1px solid #30363d'
+                                }}>
+                                    <img
+                                        src={imageUrl}
+                                        alt={currentFile.filename}
+                                        style={{ maxWidth: '100%', maxHeight: '70vh', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', borderRadius: '4px' }}
+                                    />
+                                    <p style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                        Previewing {currentFile.filename}
+                                    </p>
+                                </div>
+                            ) : isEmpty ? (
+                                <div style={{
+                                    background: '#0d1117',
+                                    borderRadius: '8px',
+                                    padding: '60px',
+                                    textAlign: 'center',
+                                    border: '1px solid #30363d',
+                                    color: 'var(--text-secondary)'
+                                }}>
+                                    <p style={{ marginBottom: '16px', fontSize: '14px' }}>
+                                        {isImage ? 'Image file' : 'No content changes in this file (likely renamed or binary).'}
+                                    </p>
+                                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                                        <button
+                                            onClick={handleFetchContent}
+                                            disabled={loadingContent}
+                                            style={{
+                                                background: 'var(--accent-color)',
+                                                border: 'none',
+                                                padding: '8px 16px',
+                                                borderRadius: '6px',
+                                                color: 'white',
+                                                cursor: loadingContent ? 'not-allowed' : 'pointer',
+                                                fontSize: '12px',
+                                                fontWeight: 600
+                                            }}
+                                        >
+                                            {loadingContent ? 'Loading...' : isImage ? 'Show Image' : 'Show Content'}
+                                        </button>
+                                        <button
+                                            onClick={() => window.open(`https://github.com/${mr.repository}/blob/${mr.head_sha}/${currentFile.filename}`, '_blank')}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid #30363d',
+                                                padding: '8px 16px',
+                                                borderRadius: '6px',
+                                                color: 'var(--text-primary)',
+                                                cursor: 'pointer',
+                                                fontSize: '12px'
+                                            }}
+                                        >
+                                            View on GitHub
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ background: '#0d1117', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
+                                    <ReactDiffViewer
+                                        oldValue={oldValue}
+                                        newValue={newValue}
+                                        splitView={true}
+                                        useDarkTheme={true}
+                                        compareMethod={DiffMethod.WORDS}
+                                        hideLineNumbers={false}
+                                        renderContent={highlightSyntax}
+                                        styles={{
+                                            diffContainer: {
+                                                lineHeight: 'normal',
+                                                tableLayout: 'fixed',
+                                                width: '100%',
+                                            },
+                                            content: {
+                                                width: '50%',
+                                            },
+                                            gutter: {
+                                                minWidth: '50px',
+                                                width: '50px',
+                                                paddingLeft: '10px',
+                                                paddingRight: '10px',
+                                            },
+                                            lineNumber: {
+                                                fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
+                                                fontSize: 'var(--app-font-size)',
+                                                lineHeight: 'normal !important',
+                                                paddingTop: '2px',
+                                                paddingBottom: '2px',
+                                                minWidth: '30px',
+                                            },
+                                            contentText: {
+                                                fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
+                                                fontSize: 'var(--app-font-size)',
+                                                lineHeight: 'normal !important',
+                                                paddingTop: '2px',
+                                                paddingBottom: '2px',
+                                                paddingLeft: '10px',
+                                                paddingRight: '10px',
+                                                wordBreak: 'break-all',
+                                                whiteSpace: 'pre-wrap',
+                                            },
+                                            line: {
+                                                marginTop: '0px',
+                                                marginBottom: '0px',
+                                            },
+                                            variables: {
+                                                dark: {
+                                                    diffViewerBackground: '#0d1117',
+                                                    gutterBackground: '#0d1117',
+                                                    addedBackground: '#2ea04326',
+                                                    addedGutterBackground: '#2ea0434d',
+                                                    removedBackground: '#f8514926',
+                                                    removedGutterBackground: '#f851494d',
+                                                    wordAddedBackground: '#2ea04366',
+                                                    wordRemovedBackground: '#f8514966',
+                                                    codeFoldGutterBackground: '#161b22',
+                                                    codeFoldBackground: '#0d1117',
+                                                    emptyLineBackground: '#0d1117',
+                                                    gutterColor: '#8b949e',
+                                                    codeFoldContentColor: '#8b949e',
+                                                    diffViewerTitleBackground: '#161b22',
+                                                    diffViewerTitleColor: '#c9d1d9',
+                                                }
                                             }
-                                        }
-                                    }}
-                                />
-                            </div>
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
