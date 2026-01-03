@@ -232,6 +232,13 @@ export default function App() {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Global shortcut: Cmd+R to refresh (only in list view)
+            if (view === 'list' && (e.metaKey || e.ctrlKey) && e.key === 'r') {
+                e.preventDefault();
+                fetchMrs();
+                return;
+            }
+
             if (view === 'review' && selectedMr) {
                 const files = selectedMr.files
 
@@ -309,7 +316,7 @@ export default function App() {
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [view, selectedMr, currentFileIndex, toggleFileViewed])
+    }, [view, selectedMr, currentFileIndex, toggleFileViewed, fetchMrs])
 
     return (
         <MainLayout

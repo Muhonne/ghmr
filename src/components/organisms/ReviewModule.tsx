@@ -166,12 +166,19 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                         content: {
                                             width: '50%',
                                         },
+                                        gutter: {
+                                            minWidth: '50px',
+                                            width: '50px',
+                                            paddingLeft: '10px',
+                                            paddingRight: '10px',
+                                        },
                                         lineNumber: {
                                             fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
                                             fontSize: 'var(--app-font-size)',
                                             lineHeight: 'normal !important',
                                             paddingTop: '2px',
                                             paddingBottom: '2px',
+                                            minWidth: '30px',
                                         },
                                         contentText: {
                                             fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
@@ -179,6 +186,10 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                             lineHeight: 'normal !important',
                                             paddingTop: '2px',
                                             paddingBottom: '2px',
+                                            paddingLeft: '10px',
+                                            paddingRight: '10px',
+                                            wordBreak: 'break-all',
+                                            whiteSpace: 'pre-wrap',
                                         },
                                         line: {
                                             marginTop: '0px',
