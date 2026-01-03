@@ -28,13 +28,4 @@ export interface User {
 
 export type View = 'list' | 'detail' | 'review' | 'settings'
 
-declare global {
-    interface Window {
-        electron?: {
-            loadConfig: () => Promise<any>;
-            saveConfig: (config: any) => Promise<boolean>;
-            loadReviews: (mrId: number) => Promise<Record<string, string>>;
-            saveReview: (mrId: number, viewedMap: Record<string, string>) => Promise<boolean>;
-        }
-    }
-}
+
