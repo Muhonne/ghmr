@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Settings as SettingsIcon } from 'lucide-react';
+import { ShieldCheck, Settings as SettingsIcon, AlertCircle } from 'lucide-react';
+import { validateGitHubToken } from '../../utils/tokenValidation';
 
 interface SettingsProps {
     token: string;
@@ -17,6 +18,27 @@ export const Settings: React.FC<SettingsProps> = ({
     setFontSize,
     onSave
 }) => {
+    const [tokenError, setTokenError] = useState<string>('');
+
+    const handleTokenChange = (newToken: string) => {
+        setToken(newToken);
+        // Clear error on change
+        if (tokenError) setTokenError('');
+    };
+
+    const handleSave = () => {
+        const validation = validateGitHubToken(token);
+        if (!validation.valid) {
+            setTokenError(validation.error || 'Invalid token');
+            return;
+        }
+        setTokenError('');
+        onSave(token, fontSize);
+    };
+
+    const tokenValidation = validateGitHubToken(token);
+    const isTokenValid = token === '' || tokenValidation.valid;
+
     return (
         <motion.div
             key="settings"
@@ -39,25 +61,37 @@ export const Settings: React.FC<SettingsProps> = ({
                         <input
                             type="password"
                             value={token}
-                            onChange={(e) => setToken(e.target.value)}
+                            onChange={(e) => handleTokenChange(e.target.value)}
                             placeholder="ghp_xxxxxxxxxxxx"
                             style={{
                                 width: '100%',
                                 background: 'rgba(0,0,0,0.2)',
-                                border: '1px solid var(--border-color)',
+                                border: `1px solid ${tokenError ? '#f44336' : isTokenValid ? 'var(--border-color)' : '#ff9800'}`,
                                 borderRadius: '8px',
                                 padding: '12px 16px',
+                                paddingRight: '40px',
                                 color: 'white',
                                 outline: 'none'
                             }}
                         />
                         <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
-                            <ShieldCheck size={18} color={token ? '#4caf50' : '#444'} />
+                            {tokenError ? (
+                                <AlertCircle size={18} color="#f44336" />
+                            ) : isTokenValid && token ? (
+                                <ShieldCheck size={18} color="#4caf50" />
+                            ) : (
+                                <ShieldCheck size={18} color="#444" />
+                            )}
                         </div>
                     </div>
+                    {tokenError && (
+                        <p style={{ fontSize: '12px', color: '#f44336', marginTop: '8px' }}>
+                            {tokenError}
+                        </p>
+                    )}
                     <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.6' }}>
                         Your token needs <strong>'repo'</strong> scope to fetch private repositories and pull requests.
-                        It is stored locally on your machine and never sent to any server other than GitHub.
+                        It is stored securely using encrypted storage and never sent to any server other than GitHub.
                     </p>
                 </div>
 
@@ -86,7 +120,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <button
                     className="btn-primary"
                     style={{ width: '100%', padding: '12px' }}
-                    onClick={() => onSave(token, fontSize)}
+                    onClick={handleSave}
                 >
                     Save Configuration
                 </button>
