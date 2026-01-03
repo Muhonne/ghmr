@@ -8,5 +8,24 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-  }
+  },
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    sourcemap: false, // Don't ship source maps in production
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'diff-viewer': ['react-diff-viewer-continued'],
+          'syntax-highlighter': ['prismjs'],
+        },
+      },
+    },
+  },
 })

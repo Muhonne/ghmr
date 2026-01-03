@@ -3,6 +3,7 @@ import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { motion } from 'framer-motion';
 import { ReviewSidebar } from '../molecules/ReviewSidebar';
 import { MergeRequest } from '../../types';
+import DOMPurify from 'dompurify';
 
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-tomorrow.css';
@@ -25,7 +26,7 @@ interface ReviewModuleProps {
     fileListWidth: number;
     isResizing: boolean;
     startResizing: (e: React.MouseEvent) => void;
-    scrollRef: React.RefObject<HTMLDivElement>;
+    scrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const parsePatch = (patch?: string) => {
@@ -91,7 +92,13 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
         try {
             const grammar = Prism.languages[lang];
             if (grammar) {
-                return <span dangerouslySetInnerHTML={{ __html: Prism.highlight(str, grammar, lang) }} />;
+                const highlighted = Prism.highlight(str, grammar, lang);
+                // Sanitize the highlighted HTML to prevent XSS
+                const sanitized = DOMPurify.sanitize(highlighted, {
+                    ALLOWED_TAGS: ['span'],
+                    ALLOWED_ATTR: ['class', 'style']
+                });
+                return <span dangerouslySetInnerHTML={{ __html: sanitized }} />;
             }
         } catch (e) {
             // Fallback to plain text on error

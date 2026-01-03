@@ -20,8 +20,9 @@
       }
     ],
     "security": {
-      "csp": null
-    }
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.github.com https://*.githubusercontent.com; img-src 'self' https://*.githubusercontent.com https://avatars.githubusercontent.com data: blob:; frame-src 'none'; object-src 'none'"
+    },
+    "withGlobalTauri": false
   },
   "bundle": {
     "active": true,

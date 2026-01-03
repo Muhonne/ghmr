@@ -8,6 +8,8 @@ import { MrDetail } from './components/organisms/MrDetail'
 import { ReviewModule } from './components/organisms/ReviewModule'
 import { Settings } from './components/organisms/Settings'
 import { isFileViewed } from './utils/reReview'
+import { secureStorage } from './utils/secureStorage'
+import { sanitizeTokenForLogging } from './utils/tokenValidation'
 
 export default function App() {
     const [token, setToken] = useState<string>('')
@@ -22,18 +24,22 @@ export default function App() {
     const [view, setView] = useState<View>('settings')
     const [currentFileIndex, setCurrentFileIndex] = useState(0)
     const [isSidebarMinified, setIsSidebarMinified] = useState(true)
-    const reviewScrollRef = useRef<HTMLDivElement>(null)
+    const reviewScrollRef = useRef<HTMLDivElement | null>(null)
     const sidebarWidthRef = useRef(0)
 
 
     useEffect(() => {
         const loadAppConfig = async () => {
-            const localToken = localStorage.getItem('gh_token')
-            if (localToken) setToken(localToken)
-            const localFontSize = localStorage.getItem('app_font_size')
-            if (localFontSize) setFontSize(parseInt(localFontSize))
-            const localWidth = localStorage.getItem('file_list_width')
-            if (localWidth) setFileListWidth(parseInt(localWidth))
+            try {
+                const localToken = await secureStorage.getToken()
+                if (localToken) setToken(localToken)
+                const localFontSize = await secureStorage.getFontSize()
+                setFontSize(localFontSize)
+                const localWidth = await secureStorage.getFileListWidth()
+                setFileListWidth(localWidth)
+            } catch (error) {
+                console.error('Failed to load config:', error)
+            }
         }
         loadAppConfig()
     }, [])
@@ -46,7 +52,16 @@ export default function App() {
         document.documentElement.style.setProperty('--file-list-width', `${fileListWidth}px`)
     }, [fileListWidth])
 
-    const octokit = useMemo(() => token ? new Octokit({ auth: token }) : null, [token])
+    const octokit = useMemo(() => {
+        if (!token) return null
+        return new Octokit({
+            auth: token,
+            baseUrl: 'https://api.github.com', // Explicit HTTPS
+            request: {
+                timeout: 5000
+            }
+        })
+    }, [token])
 
     const fetchMrs = useCallback(async () => {
         if (!octokit) return
@@ -69,9 +84,7 @@ export default function App() {
                         pull_number: pull.number
                     })
 
-                    let savedViewedForMr: Record<string, string> = {};
-                    const localViewed = localStorage.getItem(`viewed_${pull.id}`);
-                    if (localViewed) savedViewedForMr = JSON.parse(localViewed);
+                    const savedViewedForMr = await secureStorage.getViewedFiles(pull.id)
 
                     return {
                         id: pull.id,
@@ -99,15 +112,21 @@ export default function App() {
                 }
             }))
 
-            const mappedMrs = results.filter((mr): mr is MergeRequest => mr !== null)
+            const mappedMrs = results.filter((mr: MergeRequest | null): mr is MergeRequest => mr !== null)
             setMrs(mappedMrs)
         } catch (error: any) {
-            console.error("Failed to fetch MRs:", error)
+            // Sanitized error logging
+            console.error("API Error:", error.status || "Unknown")
+
             if (error.status === 401) {
-                setError("Invalid GitHub token. Please check your credentials.")
+                setError("Authentication failed. Please verify your token.")
                 setView('settings')
+            } else if (error.status === 403) {
+                setError("Access denied. Check token permissions.")
+            } else if (error.status === 404) {
+                setError("Resource not found.")
             } else {
-                setError("Failed to fetch merge requests. Please try again.")
+                setError("Unable to fetch data. Please try again.")
             }
         } finally {
             setLoading(false)
@@ -119,21 +138,25 @@ export default function App() {
     }, [token, fetchMrs])
 
     const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number) => {
-        if (newToken !== undefined) setToken(newToken)
-        if (newFontSize !== undefined) setFontSize(newFontSize)
-        if (newWidth !== undefined) setFileListWidth(newWidth)
+        try {
+            if (newToken !== undefined) {
+                setToken(newToken)
+                await secureStorage.setToken(newToken)
+            }
+            if (newFontSize !== undefined) {
+                setFontSize(newFontSize)
+                await secureStorage.setFontSize(newFontSize)
+            }
+            if (newWidth !== undefined) {
+                setFileListWidth(newWidth)
+                await secureStorage.setFileListWidth(newWidth)
+            }
 
-        const configToSave = {
-            token: newToken !== undefined ? newToken : token,
-            fontSize: newFontSize !== undefined ? newFontSize : fontSize,
-            fileListWidth: newWidth !== undefined ? newWidth : fileListWidth
+            if (newToken !== undefined) setView('list')
+        } catch (error) {
+            console.error('Failed to save config')
+            setError('Failed to save configuration')
         }
-
-        if (newToken !== undefined) localStorage.setItem('gh_token', newToken)
-        if (newFontSize !== undefined) localStorage.setItem('app_font_size', String(newFontSize))
-        if (newWidth !== undefined) localStorage.setItem('file_list_width', String(newWidth))
-
-        if (newToken !== undefined) setView('list')
     }
 
     const startResizing = useCallback((e: React.MouseEvent) => {
@@ -153,7 +176,7 @@ export default function App() {
             setFileListWidth(currentWidth)
             handleSaveConfig(undefined, undefined, currentWidth)
         }
-    }, [handleSaveConfig])
+    }, [])
 
     const resize = useCallback((e: MouseEvent) => {
         if (isResizing) {
@@ -212,7 +235,7 @@ export default function App() {
                 }
             })
 
-            localStorage.setItem(`viewed_${mrId}`, JSON.stringify(viewedMap))
+            await secureStorage.setViewedFiles(mrId, viewedMap)
         }
     }
 
@@ -230,12 +253,29 @@ export default function App() {
         }
     }, [currentFileIndex, view])
 
+    // Debounce helper
+    const debounce = <T extends (...args: any[]) => any>(
+        func: T,
+        wait: number
+    ): ((...args: Parameters<T>) => void) => {
+        let timeout: ReturnType<typeof setTimeout> | null = null
+        return (...args: Parameters<T>) => {
+            if (timeout) clearTimeout(timeout)
+            timeout = setTimeout(() => func(...args), wait)
+        }
+    }
+
+    const debouncedFetchMrs = useMemo(
+        () => debounce(fetchMrs, 2000),
+        [fetchMrs]
+    )
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Global shortcut: Cmd+R to refresh (only in list view)
+            // Global shortcut: Cmd+R to refresh (only in list view) - now debounced
             if (view === 'list' && (e.metaKey || e.ctrlKey) && e.key === 'r') {
                 e.preventDefault();
-                fetchMrs();
+                debouncedFetchMrs();
                 return;
             }
 
@@ -316,7 +356,7 @@ export default function App() {
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [view, selectedMr, currentFileIndex, toggleFileViewed, fetchMrs])
+    }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs])
 
     return (
         <MainLayout
