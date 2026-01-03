@@ -4,6 +4,20 @@ import { motion } from 'framer-motion';
 import { ReviewSidebar } from '../molecules/ReviewSidebar';
 import { MergeRequest } from '../../types';
 
+import Prism from 'prismjs';
+import 'prismjs/themes/prism-tomorrow.css';
+import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-jsx';
+import 'prismjs/components/prism-tsx';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-bash';
+import 'prismjs/components/prism-yaml';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-go';
+
 interface ReviewModuleProps {
     mr: MergeRequest;
     currentIndex: number;
@@ -57,6 +71,33 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
 }) => {
     const currentFile = mr.files[currentIndex];
     const { oldValue, newValue } = parsePatch(currentFile?.patch);
+
+    const highlightSyntax = (str: string) => {
+        if (!currentFile?.filename) return <span style={{ display: 'inline' }}>{str}</span>;
+
+        const ext = currentFile.filename.split('.').pop()?.toLowerCase();
+        let lang = 'plaintext';
+
+        if (['ts', 'tsx'].includes(ext || '')) lang = 'typescript';
+        else if (['js', 'jsx', 'cjs', 'mjs'].includes(ext || '')) lang = 'javascript';
+        else if (ext === 'json') lang = 'json';
+        else if (ext === 'css') lang = 'css';
+        else if (['md', 'markdown'].includes(ext || '')) lang = 'markdown';
+        else if (['sh', 'bash', 'zsh'].includes(ext || '')) lang = 'bash';
+        else if (['yml', 'yaml'].includes(ext || '')) lang = 'yaml';
+        else if (ext === 'py') lang = 'python';
+        else if (ext === 'go') lang = 'go';
+
+        try {
+            const grammar = Prism.languages[lang];
+            if (grammar) {
+                return <span dangerouslySetInnerHTML={{ __html: Prism.highlight(str, grammar, lang) }} />;
+            }
+        } catch (e) {
+            // Fallback to plain text on error
+        }
+        return <span style={{ display: 'inline' }}>{str}</span>;
+    };
 
     return (
         <motion.div
@@ -115,6 +156,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                     useDarkTheme={true}
                                     compareMethod={DiffMethod.WORDS}
                                     hideLineNumbers={false}
+                                    renderContent={highlightSyntax}
                                     styles={{
                                         diffContainer: {
                                             lineHeight: 'normal',
