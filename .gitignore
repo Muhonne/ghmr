@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-electron
+release
+.DS_Store
+.env
+.env.local
+coverage
+.idea
+.vscode
+*.log

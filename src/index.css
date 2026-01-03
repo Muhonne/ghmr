@@ -1,0 +1,249 @@
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --bg-app: #121212;
+  --bg-sidebar: #1a1a1a;
+  --bg-active: #2a2a2a;
+  --bg-hover: #222222;
+
+  --border-color: #333333;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --accent-color: #007aff;
+
+  --app-font-size: 14px;
+  --sidebar-width: 240px;
+  --sidebar-width-minified: 100px;
+  --header-height: 52px;
+  --file-list-width: 300px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1a1a1a;
+  font-size: var(--app-font-size);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  font-size: var(--app-font-size);
+}
+
+#root {
+  height: 100%;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg-app);
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  z-index: 100;
+  position: relative;
+  -webkit-app-region: drag;
+}
+
+body.resizing .sidebar {
+  transition: none !important;
+}
+
+.sidebar.minified {
+  width: var(--sidebar-width-minified);
+}
+
+.sidebar * {
+  -webkit-app-region: no-drag;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin: 4px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.minified .sidebar-item {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.sidebar-item>* {
+  flex-shrink: 0;
+}
+
+.sidebar-item>span {
+  flex-shrink: 1;
+}
+
+.sidebar-item:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-item.active {
+  background-color: var(--bg-active);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #0f1115;
+  position: relative;
+  overflow: hidden;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: var(--text-primary) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+.back-button:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.main-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 42px;
+  -webkit-app-region: drag;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.main-content * {
+  -webkit-app-region: no-drag;
+}
+
+/* Resize Performance Optimizations */
+body.resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.resizing * {
+  transition: none !important;
+  pointer-events: none !important;
+}
+
+body.resizing .resizer,
+body.resizing .sidebar,
+body.resizing .main-content {
+  pointer-events: all !important;
+}
+
+.sidebar,
+.main-content,
+.resizer {
+  will-change: width, transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+button {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  border-radius: 6px;
+  padding: 6px 12px;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-primary {
+  background: var(--accent-color);
+  color: white;
+  font-weight: 500;
+}
+
+.btn-primary:hover {
+  background: #0062cc;
+}
+
+.diff-container {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--accent-color);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.resizer {
+  width: 1px;
+  cursor: col-resize;
+  background: var(--border-color);
+  transition: background 0.2s, width 0.2s;
+  z-index: 10;
+  position: relative;
+}
+
+.resizer::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  cursor: col-resize;
+}
+
+.resizer:hover,
+.resizer.resizing {
+  background: var(--accent-color);
+  width: 2px;
+}
