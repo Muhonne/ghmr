@@ -7,6 +7,7 @@ import { MrList } from './components/organisms/MrList'
 import { MrDetail } from './components/organisms/MrDetail'
 import { ReviewModule } from './components/organisms/ReviewModule'
 import { Settings } from './components/organisms/Settings'
+import { isFileViewed } from './utils/reReview'
 
 export default function App() {
     const [token, setToken] = useState<string>('')
@@ -115,7 +116,7 @@ export default function App() {
                             deletions: f.deletions,
                             patch: f.patch,
                             sha: f.sha,
-                            viewed: savedViewedForMr[f.filename] === f.sha
+                            viewed: isFileViewed(savedViewedForMr[f.filename], f.sha)
                         }))
                     }
                 } catch (e) {

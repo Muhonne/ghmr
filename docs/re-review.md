@@ -41,3 +41,4 @@
   - If `file.sha` (current) != `file.sha` (at time of view), then it changed.
   - This avoids needing to diff file contents manually.
 - **Persistence**: This state must survive app restarts.
+<--- test if this works --->
