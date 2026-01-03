@@ -301,10 +301,8 @@ export default function App() {
                 if (e.key === 'Backspace') {
                     e.preventDefault();
                     const file = files[currentFileIndex]
-                    if (currentFileIndex === 0 && file.viewed) toggleFileViewed(selectedMr.id, file.filename)
-                    else if (currentFileIndex > 0) {
-                        const prev = files[currentFileIndex - 1]
-                        if (prev.viewed) toggleFileViewed(selectedMr.id, prev.filename)
+                    if (file.viewed) toggleFileViewed(selectedMr.id, file.filename)
+                    if (currentFileIndex > 0) {
                         setCurrentFileIndex(p => p - 1)
                     }
                 }

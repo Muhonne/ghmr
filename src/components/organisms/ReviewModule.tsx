@@ -118,6 +118,11 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                     styles={{
                                         diffContainer: {
                                             lineHeight: 'normal',
+                                            tableLayout: 'fixed',
+                                            width: '100%',
+                                        },
+                                        content: {
+                                            width: '50%',
                                         },
                                         lineNumber: {
                                             fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
