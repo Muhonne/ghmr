@@ -24,7 +24,7 @@ export default function App() {
     const [view, setView] = useState<View>('settings')
     const [currentFileIndex, setCurrentFileIndex] = useState(0)
     const [isSidebarMinified, setIsSidebarMinified] = useState(true)
-    const reviewScrollRef = useRef<HTMLDivElement>(null)
+    const reviewScrollRef = useRef<HTMLDivElement | null>(null)
     const sidebarWidthRef = useRef(0)
 
 
@@ -112,7 +112,7 @@ export default function App() {
                 }
             }))
 
-            const mappedMrs = results.filter((mr): mr is MergeRequest => mr !== null)
+            const mappedMrs = results.filter((mr: MergeRequest | null): mr is MergeRequest => mr !== null)
             setMrs(mappedMrs)
         } catch (error: any) {
             // Sanitized error logging
@@ -258,7 +258,7 @@ export default function App() {
         func: T,
         wait: number
     ): ((...args: Parameters<T>) => void) => {
-        let timeout: NodeJS.Timeout | null = null
+        let timeout: ReturnType<typeof setTimeout> | null = null
         return (...args: Parameters<T>) => {
             if (timeout) clearTimeout(timeout)
             timeout = setTimeout(() => func(...args), wait)

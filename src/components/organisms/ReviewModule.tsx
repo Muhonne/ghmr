@@ -26,7 +26,7 @@ interface ReviewModuleProps {
     fileListWidth: number;
     isResizing: boolean;
     startResizing: (e: React.MouseEvent) => void;
-    scrollRef: React.RefObject<HTMLDivElement>;
+    scrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const parsePatch = (patch?: string) => {
