@@ -18,5 +18,4 @@
 
 ## Roadmap
 - [ ] CI/CD Status integration.
-- [ ] Commenting support.
-- [ ] PR Approval workflow.
+- [ ] cmd+c of selected text should copy a string "filename:line <selection>"

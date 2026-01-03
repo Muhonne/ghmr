@@ -116,6 +116,32 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                     compareMethod={DiffMethod.WORDS}
                                     hideLineNumbers={false}
                                     styles={{
+                                        diffContainer: {
+                                            lineHeight: 'normal',
+                                            tableLayout: 'fixed',
+                                            width: '100%',
+                                        },
+                                        content: {
+                                            width: '50%',
+                                        },
+                                        lineNumber: {
+                                            fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
+                                            fontSize: 'var(--app-font-size)',
+                                            lineHeight: 'normal !important',
+                                            paddingTop: '2px',
+                                            paddingBottom: '2px',
+                                        },
+                                        contentText: {
+                                            fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
+                                            fontSize: 'var(--app-font-size)',
+                                            lineHeight: 'normal !important',
+                                            paddingTop: '2px',
+                                            paddingBottom: '2px',
+                                        },
+                                        line: {
+                                            marginTop: '0px',
+                                            marginBottom: '0px',
+                                        },
                                         variables: {
                                             dark: {
                                                 diffViewerBackground: '#0d1117',

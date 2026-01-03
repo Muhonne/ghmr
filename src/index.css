@@ -247,3 +247,8 @@ button:hover {
   background: var(--accent-color);
   width: 2px;
 }
+
+/* Force React Diff Viewer to respect font metrics */
+[class*="react-diff"][class*="diff-container"] pre {
+  line-height: normal !important;
+}

@@ -42,7 +42,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                             onClick={onStartReview}
                             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px' }}
                         >
-                            Start Review
+                            Review
                         </button>
                         <button
                             onClick={() => {
