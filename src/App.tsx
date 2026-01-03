@@ -25,33 +25,15 @@ export default function App() {
     const reviewScrollRef = useRef<HTMLDivElement>(null)
     const sidebarWidthRef = useRef(0)
 
-    // Electron integration
+
     useEffect(() => {
         const loadAppConfig = async () => {
-            if (window.electron) {
-                try {
-                    const config = await window.electron.loadConfig()
-                    if (config.token) {
-                        setToken(config.token)
-                        if (view === 'settings') setView('list')
-                    }
-                    if (config.fontSize) {
-                        setFontSize(config.fontSize)
-                    }
-                    if (config.fileListWidth) {
-                        setFileListWidth(config.fileListWidth)
-                    }
-                } catch (e) {
-                    console.error('Failed to load config from Electron:', e)
-                }
-            } else {
-                const localToken = localStorage.getItem('gh_token')
-                if (localToken) setToken(localToken)
-                const localFontSize = localStorage.getItem('app_font_size')
-                if (localFontSize) setFontSize(parseInt(localFontSize))
-                const localWidth = localStorage.getItem('file_list_width')
-                if (localWidth) setFileListWidth(parseInt(localWidth))
-            }
+            const localToken = localStorage.getItem('gh_token')
+            if (localToken) setToken(localToken)
+            const localFontSize = localStorage.getItem('app_font_size')
+            if (localFontSize) setFontSize(parseInt(localFontSize))
+            const localWidth = localStorage.getItem('file_list_width')
+            if (localWidth) setFileListWidth(parseInt(localWidth))
         }
         loadAppConfig()
     }, [])
@@ -88,16 +70,8 @@ export default function App() {
                     })
 
                     let savedViewedForMr: Record<string, string> = {};
-                    if (window.electron) {
-                        try {
-                            savedViewedForMr = await window.electron.loadReviews(pull.id);
-                        } catch (e) {
-                            console.error(`Failed to load reviews for MR ${pull.id}:`, e);
-                        }
-                    } else {
-                        const localViewed = localStorage.getItem(`viewed_${pull.id}`);
-                        if (localViewed) savedViewedForMr = JSON.parse(localViewed);
-                    }
+                    const localViewed = localStorage.getItem(`viewed_${pull.id}`);
+                    if (localViewed) savedViewedForMr = JSON.parse(localViewed);
 
                     return {
                         id: pull.id,
@@ -155,20 +129,9 @@ export default function App() {
             fileListWidth: newWidth !== undefined ? newWidth : fileListWidth
         }
 
-        if (window.electron) {
-            try {
-                await window.electron.saveConfig(configToSave)
-            } catch (e) {
-                console.error('Failed to save config to Electron:', e)
-                if (newToken !== undefined) localStorage.setItem('gh_token', newToken)
-                if (newFontSize !== undefined) localStorage.setItem('app_font_size', String(newFontSize))
-                if (newWidth !== undefined) localStorage.setItem('file_list_width', String(newWidth))
-            }
-        } else {
-            if (newToken !== undefined) localStorage.setItem('gh_token', newToken)
-            if (newFontSize !== undefined) localStorage.setItem('app_font_size', String(newFontSize))
-            if (newWidth !== undefined) localStorage.setItem('file_list_width', String(newWidth))
-        }
+        if (newToken !== undefined) localStorage.setItem('gh_token', newToken)
+        if (newFontSize !== undefined) localStorage.setItem('app_font_size', String(newFontSize))
+        if (newWidth !== undefined) localStorage.setItem('file_list_width', String(newWidth))
 
         if (newToken !== undefined) setView('list')
     }
@@ -249,8 +212,7 @@ export default function App() {
                 }
             })
 
-            if (window.electron) await window.electron.saveReview(mrId, viewedMap)
-            else localStorage.setItem(`viewed_${mrId}`, JSON.stringify(viewedMap))
+            localStorage.setItem(`viewed_${mrId}`, JSON.stringify(viewedMap))
         }
     }
 
@@ -270,6 +232,13 @@ export default function App() {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Global shortcut: Cmd+R to refresh (only in list view)
+            if (view === 'list' && (e.metaKey || e.ctrlKey) && e.key === 'r') {
+                e.preventDefault();
+                fetchMrs();
+                return;
+            }
+
             if (view === 'review' && selectedMr) {
                 const files = selectedMr.files
 
@@ -283,11 +252,47 @@ export default function App() {
                 }
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    reviewScrollRef.current?.scrollBy({ top: 100, behavior: 'smooth' });
+                    const scrollElement = reviewScrollRef.current;
+                    if (scrollElement) {
+                        const start = scrollElement.scrollTop;
+                        const target = start + 100;
+                        const duration = 200;
+                        const startTime = performance.now();
+
+                        const animateScroll = (currentTime: number) => {
+                            const elapsed = currentTime - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+                            const easeProgress = progress * (2 - progress); // ease out
+                            scrollElement.scrollTop = start + (target - start) * easeProgress;
+
+                            if (progress < 1) {
+                                requestAnimationFrame(animateScroll);
+                            }
+                        };
+                        requestAnimationFrame(animateScroll);
+                    }
                 }
                 if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    reviewScrollRef.current?.scrollBy({ top: -100, behavior: 'smooth' });
+                    const scrollElement = reviewScrollRef.current;
+                    if (scrollElement) {
+                        const start = scrollElement.scrollTop;
+                        const target = Math.max(0, start - 100);
+                        const duration = 200;
+                        const startTime = performance.now();
+
+                        const animateScroll = (currentTime: number) => {
+                            const elapsed = currentTime - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+                            const easeProgress = progress * (2 - progress); // ease out
+                            scrollElement.scrollTop = start + (target - start) * easeProgress;
+
+                            if (progress < 1) {
+                                requestAnimationFrame(animateScroll);
+                            }
+                        };
+                        requestAnimationFrame(animateScroll);
+                    }
                 }
 
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -311,7 +316,7 @@ export default function App() {
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [view, selectedMr, currentFileIndex, toggleFileViewed])
+    }, [view, selectedMr, currentFileIndex, toggleFileViewed, fetchMrs])
 
     return (
         <MainLayout

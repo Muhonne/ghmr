@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     List,
-    Columns,
     Settings,
     PanelLeftOpen,
     PanelLeftClose
@@ -27,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return (
         <aside className={`sidebar ${isMinified ? 'minified' : ''}`}>
             <div style={{
-                padding: isMinified ? '42px 34px 24px 34px' : '42px 16px 24px 16px',
+                padding: '24px',
                 borderBottom: '1px solid var(--border-color)',
                 display: 'flex',
                 justifyContent: isMinified ? 'center' : 'flex-start'
@@ -38,8 +37,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: 32,
-                        height: 32,
+                        width: 50,
+                        height: 50,
                         borderRadius: '8px',
                         overflow: 'hidden',
                         backgroundColor: 'transparent'
@@ -62,12 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     isMinified={isMinified}
                     onClick={() => setView('list')}
                 />
-                <SidebarItem
-                    icon={Columns}
-                    label="Recently Reviewed"
-                    isMinified={isMinified}
-                    onClick={() => { }}
-                />
+
                 <SidebarItem
                     icon={Settings}
                     label="Settings"
