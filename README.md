@@ -81,7 +81,8 @@ To update the landing page:
 1. Modify `docs/index.html` or `docs/style.css`.
 2. Ensure images are placed in `docs/assets/`.
 3. Commit and push to the `main` branch.
-4. In GitHub Repository Settings, ensure **GitHub Pages** is set to build from the `/docs` folder on the `main` branch.
+4. The **"Deploy to GitHub Pages"** workflow will automatically deploy changes if files in `/docs` are modified.
+5. **Note**: In GitHub Repository Settings -> Pages, ensure **Build and deployment > Source** is set to **"GitHub Actions"**.
 
 ## Releases & CI/CD
 The project uses GitHub Actions for automated testing and cross-platform releases.
