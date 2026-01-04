@@ -8,7 +8,9 @@ interface SettingsProps {
     setToken: (token: string) => void;
     fontSize: number;
     setFontSize: (size: number) => void;
-    onSave: (token?: string, fontSize?: number) => void;
+    pollInterval: number;
+    setPollInterval: (interval: number) => void;
+    onSave: (token?: string, fontSize?: number, width?: number, pollInterval?: number) => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
@@ -16,6 +18,8 @@ export const Settings: React.FC<SettingsProps> = ({
     setToken,
     fontSize,
     setFontSize,
+    pollInterval,
+    setPollInterval,
     onSave
 }) => {
     const [tokenError, setTokenError] = useState<string>('');
@@ -33,7 +37,7 @@ export const Settings: React.FC<SettingsProps> = ({
             return;
         }
         setTokenError('');
-        onSave(token, fontSize);
+        onSave(token, fontSize, undefined, pollInterval);
     };
 
     const tokenValidation = validateGitHubToken(token);
@@ -90,9 +94,19 @@ export const Settings: React.FC<SettingsProps> = ({
                         </p>
                     )}
                     <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.6' }}>
-                        Your token needs <strong>'repo'</strong> scope to fetch private repositories and pull requests.
+                        Your token needs <strong>'repo'</strong>, <strong>'workflow'</strong>, and <strong>'read:user'</strong> scopes to function fully.
                         It is stored securely using encrypted storage and never sent to any server other than GitHub.
                     </p>
+                </div>
+
+                <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '8px', background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.2)' }}>
+                    <h4 style={{ fontSize: '13px', color: '#ffc107', marginBottom: '8px' }}>How to get a token?</h4>
+                    <ol style={{ fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '20px' }}>
+                        <li style={{ marginBottom: '4px' }}>Go to GitHub Settings → Developer settings</li>
+                        <li style={{ marginBottom: '4px' }}>Personal access tokens → Tokens (classic)</li>
+                        <li style={{ marginBottom: '4px' }}>Generate new token (classic)</li>
+                        <li>Select the <strong>'repo'</strong>, <strong>'workflow'</strong>, and <strong>'read:user'</strong> scopes and generate</li>
+                    </ol>
                 </div>
 
                 <div style={{ marginBottom: '32px' }}>
@@ -117,6 +131,32 @@ export const Settings: React.FC<SettingsProps> = ({
                     </div>
                 </div>
 
+                <div style={{ marginBottom: '32px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                        CI Polling Interval (ms)
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <input
+                            type="number"
+                            min="500"
+                            max="30000"
+                            step="500"
+                            value={pollInterval}
+                            onChange={(e) => setPollInterval(parseInt(e.target.value) || 1000)}
+                            style={{
+                                flexGrow: 1,
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                padding: '8px 12px',
+                                color: 'white',
+                                outline: 'none'
+                            }}
+                        />
+                        <span style={{ fontSize: '14px', width: '60px', textAlign: 'right' }}>{pollInterval}ms</span>
+                    </div>
+                </div>
+
                 <button
                     className="btn-primary"
                     style={{ width: '100%', padding: '12px' }}
@@ -124,16 +164,6 @@ export const Settings: React.FC<SettingsProps> = ({
                 >
                     Save Configuration
                 </button>
-
-                <div style={{ marginTop: '24px', padding: '16px', borderRadius: '8px', background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.2)' }}>
-                    <h4 style={{ fontSize: '13px', color: '#ffc107', marginBottom: '8px' }}>How to get a token?</h4>
-                    <ol style={{ fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '20px' }}>
-                        <li style={{ marginBottom: '4px' }}>Go to GitHub Settings → Developer settings</li>
-                        <li style={{ marginBottom: '4px' }}>Personal access tokens → Tokens (classic)</li>
-                        <li style={{ marginBottom: '4px' }}>Generate new token (classic)</li>
-                        <li>Select the 'repo' scope and generate</li>
-                    </ol>
-                </div>
             </div>
         </motion.div>
     );

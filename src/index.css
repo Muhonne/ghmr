@@ -203,6 +203,22 @@ button:hover {
   background: #0062cc;
 }
 
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #555;
+}
+
+.hover-accent:hover {
+  border-color: var(--accent-color) !important;
+  color: var(--accent-color) !important;
+}
+
 .diff-container {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 13px;

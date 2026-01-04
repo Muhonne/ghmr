@@ -2,13 +2,13 @@ import React from 'react';
 import { Navigation } from 'lucide-react';
 import { MergeRequest } from '../../types';
 
-interface MrListItemProps {
+interface Props {
     mr: MergeRequest;
     onClick: () => void;
     onReviewClick: () => void;
 }
 
-export const MrListItem: React.FC<MrListItemProps> = ({
+export const MrListItem: React.FC<Props> = ({
     mr,
     onClick,
     onReviewClick

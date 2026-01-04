@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Octokit } from 'octokit'
 import { AnimatePresence } from 'framer-motion'
-import { MergeRequest, View, User } from './types'
+import { MergeRequest, View, User, CIStatus, CheckRun, Workflow } from './types'
 import { MainLayout } from './components/templates/MainLayout'
 import { MrList } from './components/organisms/MrList'
 import { MrDetail } from './components/organisms/MrDetail'
@@ -13,6 +13,7 @@ import { secureStorage } from './utils/secureStorage'
 export default function App() {
     const [token, setToken] = useState<string>('')
     const [fontSize, setFontSize] = useState<number>(14)
+    const [pollInterval, setPollInterval] = useState<number>(5000)
     const [fileListWidth, setFileListWidth] = useState<number>(300)
     const [isResizing, setIsResizing] = useState(false)
     const [user, setUser] = useState<User | null>(null)
@@ -23,6 +24,8 @@ export default function App() {
     const [view, setView] = useState<View>('settings')
     const [currentFileIndex, setCurrentFileIndex] = useState(0)
     const [isSidebarMinified, setIsSidebarMinified] = useState(true)
+    const [isTriggering, setIsTriggering] = useState(false)
+    const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
     const reviewScrollRef = useRef<HTMLDivElement | null>(null)
     const sidebarWidthRef = useRef(0)
 
@@ -34,6 +37,8 @@ export default function App() {
                 if (localToken) setToken(localToken)
                 const localFontSize = await secureStorage.getFontSize()
                 setFontSize(localFontSize)
+                const localPollInterval = await secureStorage.getPollInterval()
+                setPollInterval(localPollInterval)
                 const localWidth = await secureStorage.getFileListWidth()
                 setFileListWidth(localWidth)
             } catch (error) {
@@ -62,6 +67,7 @@ export default function App() {
         })
     }, [token])
 
+
     const fetchMrs = useCallback(async () => {
         if (!octokit) return
         setLoading(true)
@@ -88,6 +94,7 @@ export default function App() {
                         repo,
                         pull_number: pull.number
                     })
+
 
                     const savedViewedForMr = await secureStorage.getViewedFiles(pull.id)
 
@@ -139,11 +146,32 @@ export default function App() {
         }
     }, [octokit])
 
+    const handleTriggerWorkflow = useCallback(async (mr: MergeRequest, workflowId: number) => {
+        if (!octokit) return;
+        setIsTriggering(true);
+        const [owner, repo] = mr.repository.split('/');
+
+        try {
+            await octokit.rest.actions.createWorkflowDispatch({
+                owner,
+                repo,
+                workflow_id: workflowId,
+                ref: mr.head_ref
+            });
+
+        } catch (e: any) {
+            console.error('Failed to trigger workflow:', e);
+            alert(`Failed to trigger workflow: ${e.message}`);
+        } finally {
+            setIsTriggering(false);
+        }
+    }, [octokit, fetchMrs]);
+
     useEffect(() => {
         if (token) fetchMrs()
     }, [token, fetchMrs])
 
-    const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number) => {
+    const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number, newPollInterval?: number) => {
         try {
             if (newToken !== undefined) {
                 setToken(newToken)
@@ -156,6 +184,10 @@ export default function App() {
             if (newWidth !== undefined) {
                 setFileListWidth(newWidth)
                 await secureStorage.setFileListWidth(newWidth)
+            }
+            if (newPollInterval !== undefined) {
+                setPollInterval(newPollInterval)
+                await secureStorage.setPollInterval(newPollInterval)
             }
 
             if (newToken !== undefined) setView('list')
@@ -215,10 +247,16 @@ export default function App() {
         [mrs, selectedMrId]
     )
 
-    const handleSelectMr = (id: number) => {
+    const handleUpdateMr = useCallback((updatedMr: MergeRequest) => {
+        setMrs(prev => prev.map(m => m.id === updatedMr.id ? updatedMr : m));
+    }, []);
+
+
+    const handleSelectMr = useCallback(async (id: number) => {
         setSelectedMrId(id)
         setView('detail')
-    }
+        setAvailableWorkflows([])
+    }, [])
 
     const toggleFileViewed = async (mrId: number, filename: string) => {
         setMrs(prev => prev.map(m => {
@@ -404,6 +442,13 @@ export default function App() {
                             setCurrentFileIndex(index);
                             setView('review');
                         }}
+                        onTriggerWorkflow={handleTriggerWorkflow}
+                        isTriggering={isTriggering}
+                        workflows={availableWorkflows}
+                        octokit={octokit}
+                        onUpdateMr={handleUpdateMr}
+                        onUpdateWorkflows={setAvailableWorkflows}
+                        pollInterval={pollInterval}
                     />
                 )}
                 {view === 'review' && selectedMr && (
@@ -424,6 +469,8 @@ export default function App() {
                         setToken={setToken}
                         fontSize={fontSize}
                         setFontSize={setFontSize}
+                        pollInterval={pollInterval}
+                        setPollInterval={setPollInterval}
                         onSave={handleSaveConfig}
                     />
                 )}

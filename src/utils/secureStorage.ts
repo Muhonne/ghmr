@@ -10,6 +10,8 @@ export interface SecureStorage {
     setFileListWidth(width: number): Promise<void>;
     getViewedFiles(mrId: number): Promise<Record<string, string>>;
     setViewedFiles(mrId: number, files: Record<string, string>): Promise<void>;
+    getPollInterval(): Promise<number>;
+    setPollInterval(ms: number): Promise<void>;
 }
 
 class TauriSecureStorage implements SecureStorage {
@@ -72,6 +74,18 @@ class TauriSecureStorage implements SecureStorage {
     async setViewedFiles(mrId: number, files: Record<string, string>): Promise<void> {
         const store = await this.getStore();
         await store.set(`viewed_${mrId}`, files);
+        await store.save();
+    }
+
+    async getPollInterval(): Promise<number> {
+        const store = await this.getStore();
+        const interval = await store.get<number>('poll_interval');
+        return interval || 5000;
+    }
+
+    async setPollInterval(ms: number): Promise<void> {
+        const store = await this.getStore();
+        await store.set('poll_interval', ms);
         await store.save();
     }
 }

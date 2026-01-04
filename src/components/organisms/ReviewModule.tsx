@@ -18,6 +18,11 @@ import 'prismjs/components/prism-bash';
 import 'prismjs/components/prism-yaml';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-go';
+import { openUrl } from '../../utils/browser';
+
+import { CIStatusBadge } from '../atoms/CIStatusBadge';
+
+import { parsePatch } from '../../utils/patch';
 
 interface ReviewModuleProps {
     mr: MergeRequest;
@@ -29,37 +34,6 @@ interface ReviewModuleProps {
     scrollRef: React.RefObject<HTMLDivElement | null>;
     octokit: any;
 }
-
-const parsePatch = (patch?: string) => {
-    if (!patch) return { oldValue: '', newValue: '', isEmpty: true };
-
-    const lines = patch.split('\n');
-    const oldLines: string[] = [];
-    const newLines: string[] = [];
-
-    lines.forEach((line) => {
-        if (line.startsWith('@@')) {
-            if (oldLines.length > 0) {
-                oldLines.push(' ');
-                newLines.push(' ');
-            }
-        } else if (line.startsWith('-')) {
-            oldLines.push(line.substring(1));
-        } else if (line.startsWith('+')) {
-            newLines.push(line.substring(1));
-        } else if (line.startsWith(' ') || line === '') {
-            const content = line.startsWith(' ') ? line.substring(1) : line;
-            oldLines.push(content);
-            newLines.push(content);
-        }
-    });
-
-    return {
-        oldValue: oldLines.join('\n'),
-        newValue: newLines.join('\n'),
-        isEmpty: false
-    };
-};
 
 export const ReviewModule: React.FC<ReviewModuleProps> = ({
     mr,
@@ -205,7 +179,9 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                         background: '#0d1117',
                         zIndex: 10
                     }}>
-                        <code style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{currentFile?.filename}</code>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <code style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{currentFile?.filename}</code>
+                        </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <kbd style={{ background: '#333', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Enter</kbd>
                             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>to mark viewed</span>
@@ -261,7 +237,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                             {loadingContent ? 'Loading...' : isImage ? 'Show Image' : 'Show Content'}
                                         </button>
                                         <button
-                                            onClick={() => window.open(`https://github.com/${mr.repository}/blob/${mr.head_sha}/${currentFile.filename}`, '_blank')}
+                                            onClick={() => openUrl(`https://github.com/${mr.repository}/blob/${mr.head_sha}/${currentFile.filename}`)}
                                             style={{
                                                 background: 'rgba(255,255,255,0.05)',
                                                 border: '1px solid #30363d',
