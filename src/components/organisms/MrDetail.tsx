@@ -1,8 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, CheckCircle2 as CheckIcon, XCircle as XIcon, Clock as ClockIcon, HelpCircle as HelpIcon, ExternalLink, FileText, CheckCircle2, Circle } from 'lucide-react';
-import { MergeRequest, MRFile } from '../../types';
-import { CIStatusBadge } from '../atoms/CIStatusBadge';
+import { MergeRequest, MRFile, Workflow } from '../../types';
 import { openUrl } from '../../utils/browser';
 
 interface MrDetailProps {
@@ -10,9 +9,9 @@ interface MrDetailProps {
     onStartReview: () => void;
     onToggleFileViewed: (mrId: number, filename: string) => void;
     onFileClick: (index: number) => void;
-    onTriggerWorkflow?: (mr: MergeRequest) => void;
+    onTriggerWorkflow?: (mr: MergeRequest, workflowId: number) => void;
     isTriggering?: boolean;
-    workflowName?: string;
+    workflows?: Workflow[];
 }
 
 export const MrDetail: React.FC<MrDetailProps> = ({
@@ -22,7 +21,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     onFileClick,
     onTriggerWorkflow,
     isTriggering,
-    workflowName
+    workflows = []
 }) => {
     return (
         <motion.div
@@ -79,12 +78,13 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        {onTriggerWorkflow && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {onTriggerWorkflow && workflows.map(workflow => (
                             <button
-                                onClick={() => onTriggerWorkflow(mr)}
+                                key={workflow.id}
+                                onClick={() => onTriggerWorkflow(mr, workflow.id)}
                                 disabled={isTriggering}
-                                title={isTriggering ? 'Triggering...' : `Run ${workflowName || 'CI'}`}
+                                title={isTriggering ? 'Triggering...' : `Run ${workflow.name}`}
                                 style={{
                                     background: 'none',
                                     border: '1px solid var(--border-color)',
@@ -112,10 +112,9 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                 ) : (
                                     <Play size={14} />
                                 )}
-                                <span>{isTriggering ? 'Dispatching...' : (workflowName ? `Run ${workflowName}` : 'Run CI')}</span>
+                                <span>{isTriggering ? 'Dispatching...' : `Run ${workflow.name}`}</span>
                             </button>
-                        )}
-                        <CIStatusBadge status={mr.ci_status} showText={true} />
+                        ))}
                     </div>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Octokit } from 'octokit'
 import { AnimatePresence } from 'framer-motion'
-import { MergeRequest, View, User, CIStatus, CheckRun } from './types'
+import { MergeRequest, View, User, CIStatus, CheckRun, Workflow } from './types'
 import { MainLayout } from './components/templates/MainLayout'
 import { MrList } from './components/organisms/MrList'
 import { MrDetail } from './components/organisms/MrDetail'
@@ -24,7 +24,7 @@ export default function App() {
     const [currentFileIndex, setCurrentFileIndex] = useState(0)
     const [isSidebarMinified, setIsSidebarMinified] = useState(true)
     const [isTriggering, setIsTriggering] = useState(false)
-    const [currentWorkflow, setCurrentWorkflow] = useState<{ id: number, name: string } | null>(null)
+    const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
     const reviewScrollRef = useRef<HTMLDivElement | null>(null)
     const sidebarWidthRef = useRef(0)
 
@@ -179,30 +179,12 @@ export default function App() {
         }
     }, [octokit])
 
-    const handleTriggerWorkflow = useCallback(async (mr: MergeRequest) => {
+    const handleTriggerWorkflow = useCallback(async (mr: MergeRequest, workflowId: number) => {
         if (!octokit) return;
         setIsTriggering(true);
         const [owner, repo] = mr.repository.split('/');
 
         try {
-            let workflowId = currentWorkflow?.id;
-
-            if (!workflowId) {
-                const { data: workflows } = await octokit.rest.actions.listRepoWorkflows({
-                    owner,
-                    repo
-                });
-
-                const workflow = workflows.workflows.find((w: any) => w.state === 'active');
-                if (!workflow) {
-                    alert('No active workflows found to trigger.');
-                    setIsTriggering(false);
-                    return;
-                }
-                workflowId = workflow.id;
-                setCurrentWorkflow({ id: workflow.id, name: workflow.name });
-            }
-
             await octokit.rest.actions.createWorkflowDispatch({
                 owner,
                 repo,
@@ -218,7 +200,7 @@ export default function App() {
         } finally {
             setIsTriggering(false);
         }
-    }, [octokit, fetchMrs, currentWorkflow]);
+    }, [octokit, fetchMrs]);
 
     useEffect(() => {
         if (token) fetchMrs()
@@ -299,7 +281,7 @@ export default function App() {
     const handleSelectMr = useCallback(async (id: number) => {
         setSelectedMrId(id)
         setView('detail')
-        setCurrentWorkflow(null)
+        setAvailableWorkflows([])
 
         const mr = mrs.find(m => m.id === id)
         if (mr && octokit) {
@@ -309,10 +291,11 @@ export default function App() {
                     owner,
                     repo
                 })
-                const active = workflows.workflows.find((w: any) => w.state === 'active')
-                if (active) {
-                    setCurrentWorkflow({ id: active.id, name: active.name })
-                }
+                const activeOnes = workflows.workflows
+                    .filter((w: any) => w.state === 'active')
+                    .map((w: any) => ({ id: w.id, name: w.name }));
+
+                setAvailableWorkflows(activeOnes);
             } catch (e) {
                 console.error('Failed to fetch workflows for MR:', e)
             }
@@ -505,7 +488,7 @@ export default function App() {
                         }}
                         onTriggerWorkflow={handleTriggerWorkflow}
                         isTriggering={isTriggering}
-                        workflowName={currentWorkflow?.name}
+                        workflows={availableWorkflows}
                     />
                 )}
                 {view === 'review' && selectedMr && (

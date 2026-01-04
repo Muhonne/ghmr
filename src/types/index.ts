@@ -15,6 +15,11 @@ export interface CIStatus {
     check_runs: CheckRun[];
 }
 
+export interface Workflow {
+    id: number;
+    name: string;
+}
+
 export interface MergeRequest {
     id: number
     number: number
