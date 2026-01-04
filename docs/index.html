@@ -17,7 +17,10 @@
 <body>
     <nav>
         <div class="container" style="display: flex; justify-content: space-between; width: 100%;">
-            <div class="logo">ghmr</div>
+            <div class="logo">
+                <img src="assets/icon.png" alt="">
+                <span>ghmr</span>
+            </div>
             <div class="nav-links">
                 <a href="https://github.com/Muhonne/ghmr">GitHub</a>
                 <a href="https://github.com/Muhonne/ghmr/releases" class="btn btn-secondary"
@@ -28,9 +31,16 @@
 
     <header class="hero">
         <div class="container">
-            <h1>Review MRs at the <br><span style="color: var(--accent-color)">speed of thought.</span></h1>
-            <p class="tagline">A secure, lightweight desktop application for reviewing GitHub Pull Requests with an
-                optimized keyboard-first workflow.</p>
+            <h1>Review <span style="color: var(--accent-color)">your MRs</span> at the <br>speed of thought.</h1>
+            <p class="tagline">Familiar with implementing large features with AI and ending up with thousands on lines
+                of changes? Rewieving thousands of lines in GitHub is pretty tedious and erquires a log of clicking
+                around if you like toggling files as viewed.</p>
+            <p class="tagline">GHMR is a a secure, lightweight desktop application for reviewing <span
+                    style="color: var(--accent-color)">G</span>it<span style="color: var(--accent-color)">H</span>ub
+                <span style="color: var(--accent-color)">M</span>erge <span
+                    style="color: var(--accent-color)">R</span>equests with
+                an optimized keyboard-first workflow.
+            </p>
 
             <div class="cta-group">
                 <a href="https://github.com/Muhonne/ghmr/releases/latest" class="btn btn-primary">
@@ -41,11 +51,83 @@
                 </a>
             </div>
 
-            <div class="mockup-container">
-                <img src="assets/hero.png" alt="ghmr application interface" class="mockup">
+            <div class="mockup-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 3rem; margin-top: 4rem; text-align: left;">
+                <div class="mockup-container">
+                    <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem; color: var(--accent-color); font-weight: 600;">
+                        Full MR Context</h3>
+                    <img src="assets/hero-2.png" alt="Merge Request details and workflow status" class="mockup">
+                    <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">Monitor workflow runs,
+                        file changes, and PR metadata at a glance.</p>
+                </div>
+                <div class="mockup-container">
+                    <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem; color: var(--accent-color); font-weight: 600;">
+                        High-Speed Review</h3>
+                    <img src="assets/hero.png" alt="Code review interface with side-by-side diff" class="mockup">
+                    <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">Blazingly fast
+                        side-by-side diffs with keyboard navigation and one-key "Mark as Viewed".</p>
+                </div>
             </div>
         </div>
     </header>
+
+    <section class="features-list-section"
+        style="padding: 4rem 0; background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.05);">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 3rem; font-size: 2rem;">Everything you need for better reviews
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+                <div style="display: flex; gap: 1rem;">
+                    <i data-lucide="columns" style="color: var(--accent-color); flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem;">Side-by-Side Diff</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">High-fidelity diff viewer with
+                            syntax highlighting for 10+ languages.</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <i data-lucide="refresh-cw" style="color: var(--accent-color); flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem;">CI/CD Integration</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Real-time status polling for GitHub
+                            Actions and Workflow Runs.</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <i data-lucide="eye" style="color: var(--accent-color); flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem;">Persistent State</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Viewed files persist across
+                            sessions, even if the file content changes.</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <i data-lucide="lock" style="color: var(--accent-color); flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem;">Encrypted Storage</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Using Tauri's encrypted store to
+                            keep your GitHub tokens safe.</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <i data-lucide="layout" style="color: var(--accent-color); flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem;">Clean Dashboard</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Easily find your authored PRs with a
+                            distraction-free list view.</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <i data-lucide="mouse-pointer-2" style="color: var(--accent-color); flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem;">Zero Latency</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Native binary responsiveness that
+                            makes web-based tools feel sluggish.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <section class="features-section">
         <div class="container">
@@ -73,6 +155,10 @@
     </section>
 
     <footer>
+        <div style="text-align: center;">
+            <img src="assets/ermahgerd.png" alt="GHMR Logo"
+                style="max-width: 300px; border-radius: 12px; margin-bottom: 2rem;">
+        </div>
         <div class="container">
             <p class="footer-content">Created by Muhonne &bull; MIT Licensed &bull; Built with Tauri & React</p>
         </div>

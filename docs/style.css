@@ -43,6 +43,18 @@ nav {
 }
 
 .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo img {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+}
+
+.logo span {
     font-size: 1.5rem;
     font-weight: 800;
     background: linear-gradient(90deg, #58a6ff, #bc8cff);
@@ -171,7 +183,7 @@ h1 {
     border-radius: 12px;
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
     border: 1px solid var(--glass-border);
-    transform: rotateX(5deg);
+    transform: rotateX(2deg);
     transition: transform 0.5s ease;
 }
 
