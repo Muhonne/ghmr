@@ -8,7 +8,9 @@ interface SettingsProps {
     setToken: (token: string) => void;
     fontSize: number;
     setFontSize: (size: number) => void;
-    onSave: (token?: string, fontSize?: number) => void;
+    pollInterval: number;
+    setPollInterval: (interval: number) => void;
+    onSave: (token?: string, fontSize?: number, width?: number, pollInterval?: number) => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
@@ -16,6 +18,8 @@ export const Settings: React.FC<SettingsProps> = ({
     setToken,
     fontSize,
     setFontSize,
+    pollInterval,
+    setPollInterval,
     onSave
 }) => {
     const [tokenError, setTokenError] = useState<string>('');
@@ -33,7 +37,7 @@ export const Settings: React.FC<SettingsProps> = ({
             return;
         }
         setTokenError('');
-        onSave(token, fontSize);
+        onSave(token, fontSize, undefined, pollInterval);
     };
 
     const tokenValidation = validateGitHubToken(token);
@@ -124,6 +128,32 @@ export const Settings: React.FC<SettingsProps> = ({
                             style={{ flexGrow: 1 }}
                         />
                         <span style={{ fontSize: '14px', width: '40px', textAlign: 'right' }}>{fontSize}px</span>
+                    </div>
+                </div>
+
+                <div style={{ marginBottom: '32px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                        CI Polling Interval (ms)
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <input
+                            type="number"
+                            min="500"
+                            max="30000"
+                            step="500"
+                            value={pollInterval}
+                            onChange={(e) => setPollInterval(parseInt(e.target.value) || 1000)}
+                            style={{
+                                flexGrow: 1,
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                padding: '8px 12px',
+                                color: 'white',
+                                outline: 'none'
+                            }}
+                        />
+                        <span style={{ fontSize: '14px', width: '60px', textAlign: 'right' }}>{pollInterval}ms</span>
                     </div>
                 </div>
 

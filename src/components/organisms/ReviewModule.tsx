@@ -210,7 +210,6 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <code style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{currentFile?.filename}</code>
-                            <CIStatusBadge status={mr.ci_status} />
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <kbd style={{ background: '#333', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Enter</kbd>

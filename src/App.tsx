@@ -13,6 +13,7 @@ import { secureStorage } from './utils/secureStorage'
 export default function App() {
     const [token, setToken] = useState<string>('')
     const [fontSize, setFontSize] = useState<number>(14)
+    const [pollInterval, setPollInterval] = useState<number>(5000)
     const [fileListWidth, setFileListWidth] = useState<number>(300)
     const [isResizing, setIsResizing] = useState(false)
     const [user, setUser] = useState<User | null>(null)
@@ -36,6 +37,8 @@ export default function App() {
                 if (localToken) setToken(localToken)
                 const localFontSize = await secureStorage.getFontSize()
                 setFontSize(localFontSize)
+                const localPollInterval = await secureStorage.getPollInterval()
+                setPollInterval(localPollInterval)
                 const localWidth = await secureStorage.getFileListWidth()
                 setFileListWidth(localWidth)
             } catch (error) {
@@ -64,6 +67,7 @@ export default function App() {
         })
     }, [token])
 
+
     const fetchMrs = useCallback(async () => {
         if (!octokit) return
         setLoading(true)
@@ -91,42 +95,6 @@ export default function App() {
                         pull_number: pull.number
                     })
 
-                    let ciStatus: CIStatus | undefined;
-                    try {
-                        const { data: checks } = await octokit.rest.checks.listForRef({
-                            owner,
-                            repo,
-                            ref: prDetails.head.sha
-                        });
-
-                        if (checks.total_count > 0) {
-                            const checkRuns = checks.check_runs.map((cr: any) => ({
-                                id: cr.id,
-                                name: cr.name,
-                                status: cr.status as any,
-                                conclusion: cr.conclusion as any,
-                                html_url: cr.html_url,
-                                started_at: cr.started_at,
-                                completed_at: cr.completed_at
-                            }));
-
-                            let state: CIStatus['state'] = 'success';
-                            const hasFailure = checkRuns.some((cr: CheckRun) => ['failure', 'timed_out', 'action_required'].includes(cr.conclusion || ''));
-                            const hasPending = checkRuns.some((cr: CheckRun) => ['queued', 'in_progress', 'waiting'].includes(cr.status));
-
-                            if (hasFailure) state = 'failure';
-                            else if (hasPending) state = 'pending';
-
-                            ciStatus = {
-                                state,
-                                total_count: checks.total_count,
-                                success_count: checkRuns.filter((cr: CheckRun) => cr.conclusion === 'success').length,
-                                check_runs: checkRuns
-                            };
-                        }
-                    } catch (e) {
-                        console.error(`Failed to fetch checks for MR #${pull.number}:`, e);
-                    }
 
                     const savedViewedForMr = await secureStorage.getViewedFiles(pull.id)
 
@@ -149,8 +117,7 @@ export default function App() {
                             patch: f.patch,
                             sha: f.sha,
                             viewed: isFileViewed(savedViewedForMr[f.filename], f.sha)
-                        })),
-                        ci_status: ciStatus
+                        }))
                     }
                 } catch (e) {
                     console.error(`Failed to map MR #${pull?.number}:`, e);
@@ -192,8 +159,6 @@ export default function App() {
                 ref: mr.head_ref
             });
 
-            // Refresh statuses after a short delay
-            setTimeout(fetchMrs, 2000);
         } catch (e: any) {
             console.error('Failed to trigger workflow:', e);
             alert(`Failed to trigger workflow: ${e.message}`);
@@ -206,7 +171,7 @@ export default function App() {
         if (token) fetchMrs()
     }, [token, fetchMrs])
 
-    const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number) => {
+    const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number, newPollInterval?: number) => {
         try {
             if (newToken !== undefined) {
                 setToken(newToken)
@@ -219,6 +184,10 @@ export default function App() {
             if (newWidth !== undefined) {
                 setFileListWidth(newWidth)
                 await secureStorage.setFileListWidth(newWidth)
+            }
+            if (newPollInterval !== undefined) {
+                setPollInterval(newPollInterval)
+                await secureStorage.setPollInterval(newPollInterval)
             }
 
             if (newToken !== undefined) setView('list')
@@ -278,29 +247,16 @@ export default function App() {
         [mrs, selectedMrId]
     )
 
+    const handleUpdateMr = useCallback((updatedMr: MergeRequest) => {
+        setMrs(prev => prev.map(m => m.id === updatedMr.id ? updatedMr : m));
+    }, []);
+
+
     const handleSelectMr = useCallback(async (id: number) => {
         setSelectedMrId(id)
         setView('detail')
         setAvailableWorkflows([])
-
-        const mr = mrs.find(m => m.id === id)
-        if (mr && octokit) {
-            try {
-                const [owner, repo] = mr.repository.split('/')
-                const { data: workflows } = await octokit.rest.actions.listRepoWorkflows({
-                    owner,
-                    repo
-                })
-                const activeOnes = workflows.workflows
-                    .filter((w: any) => w.state === 'active')
-                    .map((w: any) => ({ id: w.id, name: w.name }));
-
-                setAvailableWorkflows(activeOnes);
-            } catch (e) {
-                console.error('Failed to fetch workflows for MR:', e)
-            }
-        }
-    }, [mrs, octokit])
+    }, [])
 
     const toggleFileViewed = async (mrId: number, filename: string) => {
         setMrs(prev => prev.map(m => {
@@ -489,6 +445,10 @@ export default function App() {
                         onTriggerWorkflow={handleTriggerWorkflow}
                         isTriggering={isTriggering}
                         workflows={availableWorkflows}
+                        octokit={octokit}
+                        onUpdateMr={handleUpdateMr}
+                        onUpdateWorkflows={setAvailableWorkflows}
+                        pollInterval={pollInterval}
                     />
                 )}
                 {view === 'review' && selectedMr && (
@@ -509,6 +469,8 @@ export default function App() {
                         setToken={setToken}
                         fontSize={fontSize}
                         setFontSize={setFontSize}
+                        pollInterval={pollInterval}
+                        setPollInterval={setPollInterval}
                         onSave={handleSaveConfig}
                     />
                 )}
