@@ -43,6 +43,18 @@ nav {
 }
 
 .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo img {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+}
+
+.logo span {
     font-size: 1.5rem;
     font-weight: 800;
     background: linear-gradient(90deg, #58a6ff, #bc8cff);

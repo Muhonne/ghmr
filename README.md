@@ -1,5 +1,11 @@
 # ghmr - GitHub Merge Request Viewer
 
+**[Live Website](https://muhonne.github.io/ghmr/)**
+
+![GHMR Logo](docs/assets/ermahgerd.png)
+
+Naming is hard, this is a Git Hub Merge Request -viewer so in short: GHMR.
+
 A secure, lightweight desktop application for reviewing GitHub Pull Requests with an optimized keyboard-first workflow.
 
 ## Core Features
@@ -61,6 +67,15 @@ npm run tauri:build
 npm install
 npm run tauri:dev
 ```
+
+## Landing Page Setup
+The project landing page is located in the `/docs` directory and is hosted via **GitHub Pages**.
+
+To update the landing page:
+1. Modify `docs/index.html` or `docs/style.css`.
+2. Ensure images are placed in `docs/assets/`.
+3. Commit and push to the `main` branch.
+4. In GitHub Repository Settings, ensure **GitHub Pages** is set to build from the `/docs` folder on the `main` branch.
 
 ## Roadmap
 - [ ] CI/CD Status integration
