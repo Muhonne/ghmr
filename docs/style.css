@@ -126,6 +126,95 @@ h1 {
     animation: fadeIn 0.8s ease-out 0.2s forwards;
 }
 
+.shortcut-hint {
+    margin-top: -1.5rem;
+    margin-bottom: 3.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out 0.3s forwards;
+}
+
+.key {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-color);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 38px;
+}
+
+.key.icon-only {
+    padding: 0;
+    width: 38px;
+    justify-content: center;
+}
+
+.key-group {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.key i {
+    width: 16px;
+    height: 16px;
+    color: var(--accent-color);
+}
+
+/* Shortcut Details Grid */
+.shortcut-details-section {
+    padding: 6rem 0;
+}
+
+.shortcut-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.shortcut-card {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    padding: 2rem;
+    border-radius: 16px;
+    text-align: center;
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+.shortcut-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(88, 166, 255, 0.3);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.shortcut-card .key-icon {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.shortcut-card h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+}
+
+.shortcut-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
 .cta-group {
     display: flex;
     gap: 1rem;
@@ -133,6 +222,50 @@ h1 {
     margin-bottom: 5rem;
     opacity: 0;
     animation: fadeIn 0.8s ease-out 0.4s forwards;
+}
+
+.hero-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin: 2rem auto 3rem;
+    max-width: 800px;
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out 0.3s forwards;
+}
+
+@media (min-width: 768px) {
+    .hero-shortcuts {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.hero-key-tile {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.hero-key-tile:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(88, 166, 255, 0.3);
+}
+
+.hero-key-tile span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.hero-key-tile .key-group {
+    scale: 0.9;
 }
 
 .btn {

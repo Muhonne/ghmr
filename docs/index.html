@@ -7,6 +7,7 @@
     <title>ghmr | Supercharge your GitHub Code Reviews</title>
     <meta name="description"
         content="A lightweight, secure desktop app for reviewing GitHub Pull Requests with a keyboard-first workflow.">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,14 +34,40 @@
         <div class="container">
             <h1>Review <span style="color: var(--accent-color)">your MRs</span> at the <br>speed of thought.</h1>
             <p class="tagline">Familiar with implementing large features with AI and ending up with thousands of lines
-                of changes? Reviewing thousands of lines in GitHub is pretty tedious and requires a lot of clicking
-                around if you like toggling files as viewed.</p>
-            <p class="tagline">GHMR is a secure, lightweight desktop application for reviewing <span
+                of changes? Reviewing big changes in GitHub is pretty tedious and requires a lot of clicking
+                around to keep track what you've already checked out.</p>
+            <p class="tagline">GHMR is a lightweight desktop application for reviewing <span
                     style="color: var(--accent-color)">G</span>it<span style="color: var(--accent-color)">H</span>ub
                 <span style="color: var(--accent-color)">M</span>erge <span
                     style="color: var(--accent-color)">R</span>equests with
                 an optimized keyboard-first workflow.
             </p>
+            <div class="hero-shortcuts">
+                <div class="hero-key-tile">
+                    <div class="key-group">
+                        <div class="key icon-only"><i data-lucide="arrow-left"></i></div>
+                        <div class="key icon-only"><i data-lucide="arrow-right"></i></div>
+                    </div>
+                    <span>Switch Files</span>
+                </div>
+                <div class="hero-key-tile">
+                    <div class="key-group">
+                        <div class="key icon-only"><i data-lucide="arrow-up"></i></div>
+                        <div class="key icon-only"><i data-lucide="arrow-down"></i></div>
+                    </div>
+                    <span>Scroll Content</span>
+                </div>
+                <div class="hero-key-tile">
+                    <div class="key icon-only" style="width: auto; padding: 0 0.8rem;"><i
+                            data-lucide="corner-down-left"></i> Enter</div>
+                    <span>Mark viewed & Next</span>
+                </div>
+                <div class="hero-key-tile">
+                    <div class="key icon-only" style="width: auto; padding: 0 0.8rem;"><i
+                            data-lucide="arrow-left-to-line"></i> Backspace</div>
+                    <span>Mark not viewed & Back</span>
+                </div>
+            </div>
 
             <div class="cta-group">
                 <a href="https://github.com/Muhonne/ghmr/releases/latest" class="btn btn-primary">
