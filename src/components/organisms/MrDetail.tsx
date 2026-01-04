@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Play, ExternalLink, FileText, CheckCircle2, Circle, Clock } from 'lucide-react';
 import { MergeRequest, MRFile, Workflow, CIStatus, CheckRun } from '../../types';
 import { openUrl } from '../../utils/browser';
-import { CheckRuns } from './CheckRuns';
+import { WorkflowRuns } from './WorkflowRuns';
 import { calculateCIStatus } from '../../utils/ci';
 
 interface MrDetailProps {
@@ -215,7 +215,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                 </div>
             </div>
 
-            <CheckRuns ciStatus={mr.ci_status} pollInterval={pollInterval} />
+            <WorkflowRuns ciStatus={mr.ci_status} pollInterval={pollInterval} />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '18px' }}>Files Changed ({mr.files.length})</h3>

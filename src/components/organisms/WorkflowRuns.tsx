@@ -4,16 +4,16 @@ import { CheckCircle2 as CheckIcon, XCircle as XIcon, Clock as ClockIcon, HelpCi
 import { CIStatus } from '../../types';
 import { openUrl } from '../../utils/browser';
 
-interface CheckRunsProps {
+interface WorkflowRunsProps {
     ciStatus: CIStatus | undefined;
     pollInterval: number;
 }
 
-export const CheckRuns: React.FC<CheckRunsProps> = ({ ciStatus, pollInterval }) => {
+export const WorkflowRuns: React.FC<WorkflowRunsProps> = ({ ciStatus, pollInterval }) => {
     return (
         <div style={{ marginBottom: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                <h3 style={{ fontSize: '18px', margin: 0 }}>Check Runs</h3>
+                <h3 style={{ fontSize: '18px', margin: 0 }}>Workflow Runs</h3>
                 <div title="Polling for updates..." style={{ display: 'flex', alignItems: 'center' }}>
                     <svg width="14" height="14" viewBox="0 0 14 14">
                         <circle
@@ -44,7 +44,7 @@ export const CheckRuns: React.FC<CheckRunsProps> = ({ ciStatus, pollInterval }) 
                 {!ciStatus ? (
                     <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
                         <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                            Loading checks...
+                            Loading workflows...
                         </motion.div>
                     </div>
                 ) : ciStatus.check_runs.length > 0 ? (
@@ -88,7 +88,7 @@ export const CheckRuns: React.FC<CheckRunsProps> = ({ ciStatus, pollInterval }) 
                         ))
                 ) : (
                     <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                        No check runs found for this branch.
+                        No workflow runs found for this branch.
                     </div>
                 )}
             </div>
