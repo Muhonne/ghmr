@@ -4,6 +4,7 @@ import { Play, ExternalLink, FileText, CheckCircle2, Circle, Clock } from 'lucid
 import { MergeRequest, MRFile, Workflow, CIStatus, CheckRun } from '../../types';
 import { openUrl } from '../../utils/browser';
 import { CheckRuns } from './CheckRuns';
+import { calculateCIStatus } from '../../utils/ci';
 
 interface MrDetailProps {
     mr: MergeRequest;
@@ -42,7 +43,6 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     const fetchMrCiStatus = useCallback(async (owner: string, repo: string, headSha: string, headRef: string): Promise<CIStatus | undefined> => {
         if (!octokit) return undefined;
         try {
-            // Fetch checks for the SHA and recent runs for the branch to catch manual triggers
             const [checksResult, shaRunsResult, branchRunsResult] = await Promise.allSettled([
                 octokit.rest.checks.listForRef({ owner, repo, ref: headSha }),
                 octokit.rest.actions.listWorkflowRunsForRepo({ owner, repo, head_sha: headSha, per_page: 20 }),
@@ -52,7 +52,6 @@ export const MrDetail: React.FC<MrDetailProps> = ({
             const checkRuns: any[] = [];
             const seenExternalIds = new Set<string>();
 
-            // 1. Process Check Runs
             if (checksResult.status === 'fulfilled') {
                 checksResult.value.data.check_runs.forEach((cr: any) => {
                     checkRuns.push({
@@ -65,12 +64,10 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                         completed_at: cr.completed_at
                     });
                     if (cr.external_id) seenExternalIds.add(cr.external_id);
-                    // Also track by numeric ID in part of the URL for better deduplication
                     seenExternalIds.add(cr.html_url.split('/').pop() || '');
                 });
             }
 
-            // 2. Process Workflow Runs (from both SHA and Branch)
             const processWorkflowRun = (run: any) => {
                 const runIdStr = String(run.id);
                 const exists = checkRuns.some((cr: any) =>
@@ -101,28 +98,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                 branchRunsResult.value.data.workflow_runs.forEach(processWorkflowRun);
             }
 
-            if (checkRuns.length > 0) {
-                // Sort by started_at descending (newest first)
-                checkRuns.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
-
-                let state: CIStatus['state'] = 'success';
-                const hasFailure = checkRuns.some((cr: CheckRun) => ['failure', 'timed_out', 'action_required', 'cancelled'].includes(cr.conclusion || ''));
-                const hasPending = checkRuns.some((cr: CheckRun) => ['queued', 'in_progress', 'waiting', 'pending'].includes(cr.status));
-
-                if (hasFailure) state = 'failure';
-                else if (hasPending) state = 'pending';
-
-                console.debug(`[CI Status] Found ${checkRuns.length} total runs. Latest: ${checkRuns[0].name} (${checkRuns[0].status})`);
-
-                return {
-                    state,
-                    total_count: checkRuns.length,
-                    success_count: checkRuns.filter((cr: CheckRun) => cr.conclusion === 'success').length,
-                    check_runs: checkRuns
-                };
-            }
-
-            return { state: 'success', total_count: 0, success_count: 0, check_runs: [] };
+            return calculateCIStatus(checkRuns);
         } catch (e) {
             console.error('Failed to fetch CI status:', e);
             return { state: 'success', total_count: 0, success_count: 0, check_runs: [] };

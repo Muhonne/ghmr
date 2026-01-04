@@ -22,6 +22,8 @@ import { openUrl } from '../../utils/browser';
 
 import { CIStatusBadge } from '../atoms/CIStatusBadge';
 
+import { parsePatch } from '../../utils/patch';
+
 interface ReviewModuleProps {
     mr: MergeRequest;
     currentIndex: number;
@@ -32,37 +34,6 @@ interface ReviewModuleProps {
     scrollRef: React.RefObject<HTMLDivElement | null>;
     octokit: any;
 }
-
-const parsePatch = (patch?: string) => {
-    if (!patch) return { oldValue: '', newValue: '', isEmpty: true };
-
-    const lines = patch.split('\n');
-    const oldLines: string[] = [];
-    const newLines: string[] = [];
-
-    lines.forEach((line) => {
-        if (line.startsWith('@@')) {
-            if (oldLines.length > 0) {
-                oldLines.push(' ');
-                newLines.push(' ');
-            }
-        } else if (line.startsWith('-')) {
-            oldLines.push(line.substring(1));
-        } else if (line.startsWith('+')) {
-            newLines.push(line.substring(1));
-        } else if (line.startsWith(' ') || line === '') {
-            const content = line.startsWith(' ') ? line.substring(1) : line;
-            oldLines.push(content);
-            newLines.push(content);
-        }
-    });
-
-    return {
-        oldValue: oldLines.join('\n'),
-        newValue: newLines.join('\n'),
-        isEmpty: false
-    };
-};
 
 export const ReviewModule: React.FC<ReviewModuleProps> = ({
     mr,
