@@ -31,10 +31,6 @@
 
     <header class="hero">
         <div class="container">
-            <div style="text-align: center;">
-                <img src="assets/ermahgerd.png" alt="GHMR Logo"
-                    style="max-width: 300px; border-radius: 12px; margin-bottom: 2rem;">
-            </div>
             <h1>Review <span style="color: var(--accent-color)">your MRs</span> at the <br>speed of thought.</h1>
             <p class="tagline">Familiar with implementing large features with AI and ending up with thousands on lines
                 of changes? Rewieving thousands of lines in GitHub is pretty tedious and erquires a log of clicking
@@ -55,8 +51,22 @@
                 </a>
             </div>
 
-            <div class="mockup-container">
-                <img src="assets/hero.png" alt="ghmr application interface" class="mockup">
+            <div class="mockup-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 3rem; margin-top: 4rem; text-align: left;">
+                <div class="mockup-container">
+                    <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem; color: var(--accent-color); font-weight: 600;">
+                        Full MR Context</h3>
+                    <img src="assets/hero-2.png" alt="Merge Request details and workflow status" class="mockup">
+                    <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">Monitor workflow runs,
+                        file changes, and PR metadata at a glance.</p>
+                </div>
+                <div class="mockup-container">
+                    <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem; color: var(--accent-color); font-weight: 600;">
+                        High-Speed Review</h3>
+                    <img src="assets/hero.png" alt="Code review interface with side-by-side diff" class="mockup">
+                    <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">Blazingly fast
+                        side-by-side diffs with keyboard navigation and one-key "Mark as Viewed".</p>
+                </div>
             </div>
         </div>
     </header>
@@ -145,6 +155,10 @@
     </section>
 
     <footer>
+        <div style="text-align: center;">
+            <img src="assets/ermahgerd.png" alt="GHMR Logo"
+                style="max-width: 300px; border-radius: 12px; margin-bottom: 2rem;">
+        </div>
         <div class="container">
             <p class="footer-content">Created by Muhonne &bull; MIT Licensed &bull; Built with Tauri & React</p>
         </div>

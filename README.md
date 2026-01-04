@@ -8,6 +8,12 @@ Naming is hard, this is a Git Hub Merge Request -viewer so in short: GHMR.
 
 A secure, lightweight desktop application for reviewing GitHub Pull Requests with an optimized keyboard-first workflow.
 
+## Showcase
+
+| MR Details & Workflow Status | High-Speed Review Mode |
+|:---:|:---:|
+| ![MR Details](docs/assets/hero-2.png) | ![Review Mode](docs/assets/hero.png) |
+
 ## Core Features
 - [x] **Desktop App**: Built with Tauri for a secure, native experience
 - [x] **🔒 Encrypted Storage**: GitHub tokens stored using encrypted Tauri store (not plaintext!)
