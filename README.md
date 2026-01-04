@@ -83,8 +83,25 @@ To update the landing page:
 3. Commit and push to the `main` branch.
 4. In GitHub Repository Settings, ensure **GitHub Pages** is set to build from the `/docs` folder on the `main` branch.
 
+## Releases & CI/CD
+The project uses GitHub Actions for automated testing and cross-platform releases.
+
+### Automated Testing
+Every push and pull request triggers the test suite via `.github/workflows/tests.yml`.
+
+### Creating a Release
+To create a new multi-platform release (macOS, Windows, Linux):
+1. Update the version in `package.json` and `src-tauri/tauri.conf.json`.
+2. Create and push a version tag:
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+3. The "Release" workflow will automatically build the binaries and create a **Draft Release** on GitHub.
+4. Review the draft and publish it once ready.
+
 ## Roadmap
-- [ ] CI/CD Status integration
+- [x] CI/CD Status integration (Workflow Runs)
 - [ ] cmd+c of selected text should copy a string "filename:line <selection>"
 - [ ] Code signing for macOS distribution
 - [ ] Auto-update mechanism
