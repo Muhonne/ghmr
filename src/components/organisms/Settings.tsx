@@ -90,9 +90,19 @@ export const Settings: React.FC<SettingsProps> = ({
                         </p>
                     )}
                     <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.6' }}>
-                        Your token needs <strong>'repo'</strong> scope to fetch private repositories and pull requests.
+                        Your token needs <strong>'repo'</strong>, <strong>'workflow'</strong>, and <strong>'read:user'</strong> scopes to function fully.
                         It is stored securely using encrypted storage and never sent to any server other than GitHub.
                     </p>
+                </div>
+
+                <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '8px', background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.2)' }}>
+                    <h4 style={{ fontSize: '13px', color: '#ffc107', marginBottom: '8px' }}>How to get a token?</h4>
+                    <ol style={{ fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '20px' }}>
+                        <li style={{ marginBottom: '4px' }}>Go to GitHub Settings → Developer settings</li>
+                        <li style={{ marginBottom: '4px' }}>Personal access tokens → Tokens (classic)</li>
+                        <li style={{ marginBottom: '4px' }}>Generate new token (classic)</li>
+                        <li>Select the <strong>'repo'</strong>, <strong>'workflow'</strong>, and <strong>'read:user'</strong> scopes and generate</li>
+                    </ol>
                 </div>
 
                 <div style={{ marginBottom: '32px' }}>
@@ -124,16 +134,6 @@ export const Settings: React.FC<SettingsProps> = ({
                 >
                     Save Configuration
                 </button>
-
-                <div style={{ marginTop: '24px', padding: '16px', borderRadius: '8px', background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.2)' }}>
-                    <h4 style={{ fontSize: '13px', color: '#ffc107', marginBottom: '8px' }}>How to get a token?</h4>
-                    <ol style={{ fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '20px' }}>
-                        <li style={{ marginBottom: '4px' }}>Go to GitHub Settings → Developer settings</li>
-                        <li style={{ marginBottom: '4px' }}>Personal access tokens → Tokens (classic)</li>
-                        <li style={{ marginBottom: '4px' }}>Generate new token (classic)</li>
-                        <li>Select the 'repo' scope and generate</li>
-                    </ol>
-                </div>
             </div>
         </motion.div>
     );

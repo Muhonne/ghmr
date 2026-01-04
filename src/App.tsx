@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Octokit } from 'octokit'
 import { AnimatePresence } from 'framer-motion'
-import { MergeRequest, View, User } from './types'
+import { MergeRequest, View, User, CIStatus, CheckRun } from './types'
 import { MainLayout } from './components/templates/MainLayout'
 import { MrList } from './components/organisms/MrList'
 import { MrDetail } from './components/organisms/MrDetail'
@@ -89,6 +89,41 @@ export default function App() {
                         pull_number: pull.number
                     })
 
+                    let ciStatus: CIStatus | undefined;
+                    try {
+                        const { data: checks } = await octokit.rest.checks.listForRef({
+                            owner,
+                            repo,
+                            ref: prDetails.head.sha
+                        });
+
+                        if (checks.total_count > 0) {
+                            const checkRuns = checks.check_runs.map((cr: any) => ({
+                                id: cr.id,
+                                name: cr.name,
+                                status: cr.status as any,
+                                conclusion: cr.conclusion as any,
+                                html_url: cr.html_url
+                            }));
+
+                            let state: CIStatus['state'] = 'success';
+                            const hasFailure = checkRuns.some((cr: CheckRun) => ['failure', 'timed_out', 'action_required'].includes(cr.conclusion || ''));
+                            const hasPending = checkRuns.some((cr: CheckRun) => ['queued', 'in_progress', 'waiting'].includes(cr.status));
+
+                            if (hasFailure) state = 'failure';
+                            else if (hasPending) state = 'pending';
+
+                            ciStatus = {
+                                state,
+                                total_count: checks.total_count,
+                                success_count: checkRuns.filter((cr: CheckRun) => cr.conclusion === 'success').length,
+                                check_runs: checkRuns
+                            };
+                        }
+                    } catch (e) {
+                        console.error(`Failed to fetch checks for MR #${pull.number}:`, e);
+                    }
+
                     const savedViewedForMr = await secureStorage.getViewedFiles(pull.id)
 
                     return {
@@ -110,7 +145,8 @@ export default function App() {
                             patch: f.patch,
                             sha: f.sha,
                             viewed: isFileViewed(savedViewedForMr[f.filename], f.sha)
-                        }))
+                        })),
+                        ci_status: ciStatus
                     }
                 } catch (e) {
                     console.error(`Failed to map MR #${pull?.number}:`, e);
@@ -138,6 +174,40 @@ export default function App() {
             setLoading(false)
         }
     }, [octokit])
+
+    const handleTriggerWorkflow = useCallback(async (mr: MergeRequest) => {
+        if (!octokit) return;
+        const [owner, repo] = mr.repository.split('/');
+
+        try {
+            // In a real app we might want to let user pick workflow, 
+            // but for now let's try to find an active one or use a default if it was common.
+            // Since we don't know the workflow file name, we'll try to find workflows first.
+            const { data: workflows } = await octokit.rest.actions.listRepoWorkflows({
+                owner,
+                repo
+            });
+
+            const workflow = workflows.workflows.find((w: any) => w.state === 'active');
+            if (!workflow) {
+                alert('No active workflows found to trigger.');
+                return;
+            }
+
+            await octokit.rest.actions.createWorkflowDispatch({
+                owner,
+                repo,
+                workflow_id: workflow.id,
+                ref: mr.head_ref
+            });
+
+            // Refresh statuses after a short delay
+            setTimeout(fetchMrs, 2000);
+        } catch (e: any) {
+            console.error('Failed to trigger workflow:', e);
+            alert(`Failed to trigger workflow: ${e.message}`);
+        }
+    }, [octokit, fetchMrs]);
 
     useEffect(() => {
         if (token) fetchMrs()
@@ -404,6 +474,7 @@ export default function App() {
                             setCurrentFileIndex(index);
                             setView('review');
                         }}
+                        onTriggerWorkflow={handleTriggerWorkflow}
                     />
                 )}
                 {view === 'review' && selectedMr && (

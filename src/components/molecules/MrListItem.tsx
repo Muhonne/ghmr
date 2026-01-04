@@ -1,14 +1,15 @@
 import React from 'react';
 import { Navigation } from 'lucide-react';
 import { MergeRequest } from '../../types';
+import { CIStatusBadge } from '../atoms/CIStatusBadge';
 
-interface MrListItemProps {
+interface Props {
     mr: MergeRequest;
     onClick: () => void;
     onReviewClick: () => void;
 }
 
-export const MrListItem: React.FC<MrListItemProps> = ({
+export const MrListItem: React.FC<Props> = ({
     mr,
     onClick,
     onReviewClick
@@ -52,7 +53,10 @@ export const MrListItem: React.FC<MrListItemProps> = ({
                 <Navigation size={20} color="var(--accent-color)" />
             </div>
             <div style={{ flexGrow: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: '15px' }}>{mr.title}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ fontWeight: 600, fontSize: '15px' }}>{mr.title}</div>
+                    <CIStatusBadge status={mr.ci_status} />
+                </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
                     #{mr.number} opened by {mr.author} • {mr.repository}
                 </div>

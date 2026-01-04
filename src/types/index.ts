@@ -1,3 +1,18 @@
+export interface CheckRun {
+    id: number;
+    name: string;
+    status: 'queued' | 'in_progress' | 'completed' | 'waiting';
+    conclusion: 'success' | 'failure' | 'neutral' | 'cancelled' | 'timed_out' | 'action_required' | 'skipped' | 'stale' | null;
+    html_url: string;
+}
+
+export interface CIStatus {
+    state: 'success' | 'failure' | 'pending' | 'unknown';
+    total_count: number;
+    success_count: number;
+    check_runs: CheckRun[];
+}
+
 export interface MergeRequest {
     id: number
     number: number
@@ -10,6 +25,7 @@ export interface MergeRequest {
     head_sha: string
     status: 'open' | 'closed' | 'merged'
     files: MRFile[]
+    ci_status?: CIStatus
 }
 
 export interface MRFile {

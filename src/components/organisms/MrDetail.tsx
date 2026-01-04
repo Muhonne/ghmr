@@ -1,20 +1,23 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Circle, FileText, ExternalLink } from 'lucide-react';
-import { MergeRequest } from '../../types';
+import { Play, CheckCircle2 as CheckIcon, XCircle as XIcon, Clock as ClockIcon, HelpCircle as HelpIcon, ExternalLink, FileText, CheckCircle2, Circle } from 'lucide-react';
+import { MergeRequest, MRFile } from '../../types';
+import { CIStatusBadge } from '../atoms/CIStatusBadge';
 
 interface MrDetailProps {
     mr: MergeRequest;
     onStartReview: () => void;
     onToggleFileViewed: (mrId: number, filename: string) => void;
     onFileClick: (index: number) => void;
+    onTriggerWorkflow?: (mr: MergeRequest) => void;
 }
 
 export const MrDetail: React.FC<MrDetailProps> = ({
     mr,
     onStartReview,
     onToggleFileViewed,
-    onFileClick
+    onFileClick,
+    onTriggerWorkflow
 }) => {
     return (
         <motion.div
@@ -49,16 +52,12 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                 const url = `https://github.com/${mr.repository}/pull/${mr.number}`;
                                 window.open(url, '_blank');
                             }}
+                            className="btn-secondary"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
                                 padding: '10px 20px',
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '8px',
-                                color: 'var(--text-primary)',
-                                cursor: 'pointer'
                             }}
                         >
                             <ExternalLink size={16} />
@@ -67,25 +66,87 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
                     <div>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px' }}>Branch</div>
                         <div style={{ fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px' }}>
                             {mr.base_ref} ← {mr.head_ref}
                         </div>
                     </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {onTriggerWorkflow && (
+                            <button
+                                onClick={() => onTriggerWorkflow(mr)}
+                                title="Run CI Workflow"
+                                style={{
+                                    background: 'none',
+                                    border: '1px solid var(--border-color)',
+                                    borderRadius: '8px',
+                                    padding: '6px 10px',
+                                    color: 'var(--text-secondary)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    transition: 'all 0.2s ease',
+                                    fontSize: '12px'
+                                }}
+                                className="hover-accent"
+                            >
+                                <Play size={14} />
+                                <span>Run CI</span>
+                            </button>
+                        )}
+                        <CIStatusBadge status={mr.ci_status} showText={true} />
+                    </div>
                 </div>
             </div>
+
+            {mr.ci_status && mr.ci_status.check_runs.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                    <h3 style={{ fontSize: '18px', marginBottom: '12px' }}>Check Runs</h3>
+                    <div className="glass" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                        {mr.ci_status.check_runs.map((run: any) => (
+                            <div
+                                key={run.id}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '12px 20px',
+                                    borderBottom: '1px solid var(--border-color)',
+                                    cursor: 'pointer'
+                                }}
+                                onClick={() => window.open(run.html_url, '_blank')}
+                                className="sidebar-item"
+                            >
+                                <div style={{ display: 'flex' }}>
+                                    {run.conclusion === 'success' ? <CheckIcon size={16} color="#4caf50" /> :
+                                        run.conclusion === 'failure' ? <XIcon size={16} color="#f44336" /> :
+                                            run.status === 'in_progress' ?
+                                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
+                                                    <ClockIcon size={16} color="#ff9800" />
+                                                </motion.div> :
+                                                <HelpIcon size={16} color="var(--text-secondary)" />}
+                                </div>
+                                <span style={{ flexGrow: 1, fontSize: '14px' }}>{run.name}</span>
+                                <ExternalLink size={14} color="var(--text-secondary)" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '18px' }}>Files Changed ({mr.files.length})</h3>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                    {mr.files.filter(f => f.viewed).length} of {mr.files.length} reviewed
+                    {mr.files.filter((f: MRFile) => f.viewed).length} of {mr.files.length} reviewed
                 </div>
             </div>
 
             <div className="glass" style={{ borderRadius: '12px', overflow: 'hidden' }}>
-                {mr.files.map((file, idx) => (
+                {mr.files.map((file: any, idx: number) => (
                     <div
                         key={idx}
                         className="sidebar-item"
