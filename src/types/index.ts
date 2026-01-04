@@ -4,6 +4,8 @@ export interface CheckRun {
     status: 'queued' | 'in_progress' | 'completed' | 'waiting';
     conclusion: 'success' | 'failure' | 'neutral' | 'cancelled' | 'timed_out' | 'action_required' | 'skipped' | 'stale' | null;
     html_url: string;
+    started_at: string;
+    completed_at: string | null;
 }
 
 export interface CIStatus {

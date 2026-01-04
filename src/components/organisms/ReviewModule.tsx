@@ -18,6 +18,7 @@ import 'prismjs/components/prism-bash';
 import 'prismjs/components/prism-yaml';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-go';
+import { openUrl } from '../../utils/browser';
 
 import { CIStatusBadge } from '../atoms/CIStatusBadge';
 
@@ -266,7 +267,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                             {loadingContent ? 'Loading...' : isImage ? 'Show Image' : 'Show Content'}
                                         </button>
                                         <button
-                                            onClick={() => window.open(`https://github.com/${mr.repository}/blob/${mr.head_sha}/${currentFile.filename}`, '_blank')}
+                                            onClick={() => openUrl(`https://github.com/${mr.repository}/blob/${mr.head_sha}/${currentFile.filename}`)}
                                             style={{
                                                 background: 'rgba(255,255,255,0.05)',
                                                 border: '1px solid #30363d',

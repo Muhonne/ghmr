@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Play, CheckCircle2 as CheckIcon, XCircle as XIcon, Clock as ClockIcon, HelpCircle as HelpIcon, ExternalLink, FileText, CheckCircle2, Circle } from 'lucide-react';
 import { MergeRequest, MRFile } from '../../types';
 import { CIStatusBadge } from '../atoms/CIStatusBadge';
+import { openUrl } from '../../utils/browser';
 
 interface MrDetailProps {
     mr: MergeRequest;
@@ -10,6 +11,8 @@ interface MrDetailProps {
     onToggleFileViewed: (mrId: number, filename: string) => void;
     onFileClick: (index: number) => void;
     onTriggerWorkflow?: (mr: MergeRequest) => void;
+    isTriggering?: boolean;
+    workflowName?: string;
 }
 
 export const MrDetail: React.FC<MrDetailProps> = ({
@@ -17,7 +20,9 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     onStartReview,
     onToggleFileViewed,
     onFileClick,
-    onTriggerWorkflow
+    onTriggerWorkflow,
+    isTriggering,
+    workflowName
 }) => {
     return (
         <motion.div
@@ -50,7 +55,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                         <button
                             onClick={() => {
                                 const url = `https://github.com/${mr.repository}/pull/${mr.number}`;
-                                window.open(url, '_blank');
+                                openUrl(url);
                             }}
                             className="btn-secondary"
                             style={{
@@ -78,24 +83,36 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                         {onTriggerWorkflow && (
                             <button
                                 onClick={() => onTriggerWorkflow(mr)}
-                                title="Run CI Workflow"
+                                disabled={isTriggering}
+                                title={isTriggering ? 'Triggering...' : `Run ${workflowName || 'CI'}`}
                                 style={{
                                     background: 'none',
                                     border: '1px solid var(--border-color)',
                                     borderRadius: '8px',
-                                    padding: '6px 10px',
+                                    padding: '6px 12px',
                                     color: 'var(--text-secondary)',
-                                    cursor: 'pointer',
+                                    cursor: isTriggering ? 'not-allowed' : 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '6px',
                                     transition: 'all 0.2s ease',
-                                    fontSize: '12px'
+                                    fontSize: '12px',
+                                    opacity: isTriggering ? 0.6 : 1
                                 }}
-                                className="hover-accent"
+                                className={!isTriggering ? "hover-accent" : ""}
                             >
-                                <Play size={14} />
-                                <span>Run CI</span>
+                                {isTriggering ? (
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                        style={{ display: 'flex' }}
+                                    >
+                                        <ClockIcon size={14} />
+                                    </motion.div>
+                                ) : (
+                                    <Play size={14} />
+                                )}
+                                <span>{isTriggering ? 'Dispatching...' : (workflowName ? `Run ${workflowName}` : 'Run CI')}</span>
                             </button>
                         )}
                         <CIStatusBadge status={mr.ci_status} showText={true} />
@@ -107,7 +124,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                 <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ fontSize: '18px', marginBottom: '12px' }}>Check Runs</h3>
                     <div className="glass" style={{ borderRadius: '12px', overflow: 'hidden' }}>
-                        {mr.ci_status.check_runs.map((run: any) => (
+                        {mr.ci_status.check_runs.map((run: any, idx: number) => (
                             <div
                                 key={run.id}
                                 style={{
@@ -115,10 +132,10 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                     alignItems: 'center',
                                     gap: '12px',
                                     padding: '12px 20px',
-                                    borderBottom: '1px solid var(--border-color)',
+                                    borderBottom: idx === (mr.ci_status?.check_runs.length || 0) - 1 ? 'none' : '1px solid var(--border-color)',
                                     cursor: 'pointer'
                                 }}
-                                onClick={() => window.open(run.html_url, '_blank')}
+                                onClick={() => openUrl(run.html_url)}
                                 className="sidebar-item"
                             >
                                 <div style={{ display: 'flex' }}>
@@ -130,7 +147,13 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                                 </motion.div> :
                                                 <HelpIcon size={16} color="var(--text-secondary)" />}
                                 </div>
-                                <span style={{ flexGrow: 1, fontSize: '14px' }}>{run.name}</span>
+                                <span style={{ fontSize: '14px', fontWeight: 500 }}>{run.name}</span>
+                                <div style={{ display: 'flex', gap: '16px', fontSize: '11px', color: 'var(--text-secondary)', marginLeft: '12px', flexGrow: 1 }}>
+                                    <span>Started: {new Date(run.started_at).toLocaleTimeString()}</span>
+                                    {run.completed_at && (
+                                        <span>Finished: {new Date(run.completed_at).toLocaleTimeString()}</span>
+                                    )}
+                                </div>
                                 <ExternalLink size={14} color="var(--text-secondary)" />
                             </div>
                         ))}
