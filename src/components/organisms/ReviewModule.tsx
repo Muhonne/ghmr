@@ -1,4 +1,5 @@
 import React from 'react';
+import { Copy, Check } from 'lucide-react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { motion } from 'framer-motion';
 import { ReviewSidebar } from '../molecules/ReviewSidebar';
@@ -107,6 +108,101 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
 
     const { oldValue, newValue, isEmpty } = parsePatch(currentFile?.patch || extraContent || undefined);
 
+    const [isCopying, setIsCopying] = React.useState(false);
+    const [hasCopied, setHasCopied] = React.useState(false);
+
+    const handleCopyRaw = async () => {
+        if (!octokit || !currentFile) return;
+        setIsCopying(true);
+        try {
+            const [owner, repo] = mr.repository.split('/');
+            const { data } = await octokit.rest.repos.getContent({
+                owner,
+                repo,
+                path: currentFile.filename,
+                ref: mr.head_sha
+            });
+
+            if ('content' in data) {
+                const content = atob(data.content.replace(/\n/g, ''));
+                await navigator.clipboard.writeText(content);
+                setHasCopied(true);
+                setTimeout(() => setHasCopied(false), 2000);
+            }
+        } catch (error) {
+            console.error("Failed to copy raw content:", error);
+        } finally {
+            setIsCopying(false);
+        }
+    };
+
+    // State for line number click feedback
+    const [clickedLine, setClickedLine] = React.useState<string | null>(null);
+
+    // Handle clicking on line numbers to copy filename:line content
+    const handleLineNumberClick = async (lineNumber: number, lineContent: string) => {
+        if (!currentFile) return;
+
+        const formatted = `${currentFile.filename}:${lineNumber} ${lineContent}`;
+
+        try {
+            await navigator.clipboard.writeText(formatted);
+
+            // Visual feedback
+            setClickedLine(String(lineNumber));
+            setTimeout(() => {
+                setClickedLine(null);
+            }, 500);
+        } catch (error) {
+            console.error('Failed to copy line reference:', error);
+        }
+    };
+
+    // Custom line number renderer with onClick for incoming changes
+    const renderGutter = (options: any) => {
+        const { lineNumber, type } = options;
+
+        if (!lineNumber) return <td />;
+
+        // Only make incoming changes (right side, type 1 = added) clickable
+        const isClickable = type === 1;
+        const isClicked = clickedLine === String(lineNumber);
+
+        if (isClickable) {
+            // Get the line content from newValue
+            const lines = newValue.split('\n');
+            const lineContent = lines[lineNumber - 1] || '';
+
+            return (
+                <td
+                    onClick={() => handleLineNumberClick(lineNumber, lineContent)}
+                    style={{
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        backgroundColor: isClicked ? '#2ea04366' : undefined,
+                        transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!isClicked) {
+                            e.currentTarget.style.backgroundColor = 'rgba(46, 160, 67, 0.2)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!isClicked) {
+                            e.currentTarget.style.backgroundColor = '';
+                        }
+                    }}
+                >
+                    {lineNumber}
+                </td>
+            );
+        }
+
+        // For non-clickable lines (deleted/unchanged), render plain line number
+        return <td style={{ userSelect: 'none' }}>{lineNumber}</td>;
+    };
+
+
     const highlightSyntax = (str: string) => {
         if (!currentFile?.filename) return <span style={{ display: 'inline' }}>{str}</span>;
 
@@ -183,8 +279,26 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                             <code style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{currentFile?.filename}</code>
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                            <kbd style={{ background: '#333', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Enter</kbd>
-                            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>to mark viewed</span>
+                            <button
+                                onClick={handleCopyRaw}
+                                disabled={isCopying}
+                                style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid #30363d',
+                                    borderRadius: '4px',
+                                    padding: '4px 8px',
+                                    color: hasCopied ? '#4caf50' : 'var(--text-secondary)',
+                                    fontSize: '11px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    cursor: isCopying ? 'wait' : 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {hasCopied ? <Check size={12} /> : <Copy size={12} />}
+                                {hasCopied ? 'Copied!' : 'Copy raw file'}
+                            </button>
                         </div>
                     </div>
 
@@ -253,15 +367,16 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                     </div>
                                 </div>
                             ) : (
-                                <div style={{ background: '#0d1117', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
+                                <div className="diff-viewer" style={{ background: '#0d1117', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
                                     <ReactDiffViewer
                                         oldValue={oldValue}
                                         newValue={newValue}
                                         splitView={true}
                                         useDarkTheme={true}
                                         compareMethod={DiffMethod.WORDS}
-                                        hideLineNumbers={false}
+                                        hideLineNumbers={true}
                                         renderContent={highlightSyntax}
+                                        renderGutter={renderGutter}
                                         styles={{
                                             diffContainer: {
                                                 lineHeight: 'normal',

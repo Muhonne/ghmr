@@ -34,6 +34,13 @@ Spec files should be created for:
 
 ## 3. Functional Requirements
 
-[Use Gherkin syntax for user-facing features, or structured requirements for technical features]
+[Use Gherkin syntax for user-facing features]
+
+```gherkin
+  Scenario: [Scenario Name]
+    Given [precondition]
+    When [action]
+    Then [outcome]
+```
 
 ## 4. Technical Requirements

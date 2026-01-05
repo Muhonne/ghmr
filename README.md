@@ -24,6 +24,8 @@ A secure, lightweight desktop application for reviewing GitHub Pull Requests wit
 
 ## Review Mode
 - [x] **Side-by-Side Diff**: High-fidelity diff viewer with syntax highlighting
+- [x] **Copy Line Reference**: Click any line number in incoming changes to copy `filename:line <content>` to clipboard
+- [x] **Copy Raw File**: One-click button to copy the entire file content to clipboard
 - [x] **Keyboard First**: Optimized for speed with comprehensive shortcuts
     - `Arrows` / `JK`: Navigate between files
     - `Enter` / `Space`: Mark file as viewed and move to next
@@ -103,6 +105,6 @@ To create a new multi-platform release (macOS, Windows, Linux):
 
 ## Roadmap
 - [x] CI/CD Status integration (Workflow Runs)
-- [ ] cmd+c of selected text should copy a string "filename:line <selection>"
+- [x] Click line numbers to copy `filename:line <content>` reference
 - [ ] Code signing for macOS distribution
 - [ ] Auto-update mechanism
