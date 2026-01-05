@@ -54,8 +54,7 @@ This application implements enterprise-grade security:
 
 - **Frontend**: React + TypeScript + Vite
 - **Desktop**: Tauri (Rust)
-- **Diff Viewer**: react-diff-viewer-continued
-- **Syntax Highlighting**: Prism.js
+- **Diff Viewer**: @git-diff-view/react (with built-in syntax highlighting)
 - **Security**: DOMPurify, Tauri Store Plugin
 
 ## Installation

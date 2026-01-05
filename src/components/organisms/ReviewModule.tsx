@@ -1,29 +1,13 @@
 import React from 'react';
 import { Copy, Check } from 'lucide-react';
-import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
+import { DiffView, DiffModeEnum } from '@git-diff-view/react';
+import '@git-diff-view/react/styles/diff-view.css';
 import { motion } from 'framer-motion';
 import { ReviewSidebar } from '../molecules/ReviewSidebar';
 import { MergeRequest } from '../../types';
 import DOMPurify from 'dompurify';
 
-import Prism from 'prismjs';
-import 'prismjs/themes/prism-tomorrow.css';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-tsx';
-import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-markdown';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-yaml';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-go';
 import { openUrl } from '../../utils/browser';
-
-import { CIStatusBadge } from '../atoms/CIStatusBadge';
-
-import { parsePatch } from '../../utils/patch';
 import { DiffColors } from '../../utils/secureStorage';
 
 interface ReviewModuleProps {
@@ -52,6 +36,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
     const [extraContent, setExtraContent] = React.useState<string | null>(null);
     const [imageUrl, setImageUrl] = React.useState<string | null>(null);
     const [loadingContent, setLoadingContent] = React.useState(false);
+    const [oldFileContent, setOldFileContent] = React.useState<string>('');
     const currentFile = mr.files[currentIndex];
 
     const isImage = React.useMemo(() => {
@@ -64,7 +49,31 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
         setExtraContent(null);
         setImageUrl(null);
         setLoadingContent(false);
+        setOldFileContent('');
     }, [currentIndex]);
+
+    // Fetch old file content for proper diff comparison
+    const fetchOldFileContent = React.useCallback(async () => {
+        if (!octokit || !currentFile || !mr.base_ref) return;
+
+        try {
+            const [owner, repo] = mr.repository.split('/');
+            const { data } = await octokit.rest.repos.getContent({
+                owner,
+                repo,
+                path: currentFile.filename,
+                ref: mr.base_ref
+            });
+
+            if ('content' in data) {
+                const decoded = atob(data.content.replace(/\n/g, ''));
+                setOldFileContent(decoded);
+            }
+        } catch (error) {
+            // File might not exist in base branch (new file)
+            setOldFileContent('');
+        }
+    }, [octokit, currentFile, mr.repository, mr.base_ref]);
 
     const handleFetchContent = async () => {
         if (!octokit || !currentFile) return;
@@ -109,7 +118,39 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
         }
     }, [isImage, currentIndex, imageUrl, loadingContent, octokit, currentFile]);
 
-    const { oldValue, newValue, isEmpty } = parsePatch(currentFile?.patch || extraContent || undefined);
+    // Get file extension for language detection
+    const getFileLanguage = (filename: string): string => {
+        const ext = filename.split('.').pop()?.toLowerCase() || '';
+        const langMap: Record<string, string> = {
+            'ts': 'typescript',
+            'tsx': 'tsx',
+            'js': 'javascript',
+            'jsx': 'jsx',
+            'json': 'json',
+            'css': 'css',
+            'scss': 'scss',
+            'less': 'less',
+            'html': 'html',
+            'md': 'markdown',
+            'markdown': 'markdown',
+            'py': 'python',
+            'go': 'go',
+            'rs': 'rust',
+            'java': 'java',
+            'rb': 'ruby',
+            'sh': 'bash',
+            'bash': 'bash',
+            'zsh': 'bash',
+            'yml': 'yaml',
+            'yaml': 'yaml',
+            'toml': 'toml',
+            'xml': 'xml',
+            'sql': 'sql',
+        };
+        return langMap[ext] || ext;
+    };
+
+    const hasPatch = !!(currentFile?.patch || extraContent);
 
     const [isCopying, setIsCopying] = React.useState(false);
     const [hasCopied, setHasCopied] = React.useState(false);
@@ -137,106 +178,6 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
         } finally {
             setIsCopying(false);
         }
-    };
-
-    // State for line number click feedback
-    const [clickedLine, setClickedLine] = React.useState<string | null>(null);
-
-    // Handle clicking on line numbers to copy filename:line content
-    const handleLineNumberClick = async (lineNumber: number, lineContent: string) => {
-        if (!currentFile) return;
-
-        const formatted = `${currentFile.filename}:${lineNumber} ${lineContent}`;
-
-        try {
-            await navigator.clipboard.writeText(formatted);
-
-            // Visual feedback
-            setClickedLine(String(lineNumber));
-            setTimeout(() => {
-                setClickedLine(null);
-            }, 500);
-        } catch (error) {
-            console.error('Failed to copy line reference:', error);
-        }
-    };
-
-    // Custom line number renderer with onClick for incoming changes
-    const renderGutter = (options: any) => {
-        const { lineNumber, type } = options;
-
-        if (!lineNumber) return <td />;
-
-        // Only make incoming changes (right side, type 1 = added) clickable
-        const isClickable = type === 1;
-        const isClicked = clickedLine === String(lineNumber);
-
-        if (isClickable) {
-            // Get the line content from newValue
-            const lines = newValue.split('\n');
-            const lineContent = lines[lineNumber - 1] || '';
-
-            return (
-                <td
-                    onClick={() => handleLineNumberClick(lineNumber, lineContent)}
-                    style={{
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                        backgroundColor: isClicked ? '#2ea04366' : undefined,
-                        transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                        if (!isClicked) {
-                            e.currentTarget.style.backgroundColor = 'rgba(46, 160, 67, 0.2)';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (!isClicked) {
-                            e.currentTarget.style.backgroundColor = '';
-                        }
-                    }}
-                >
-                    {lineNumber}
-                </td>
-            );
-        }
-
-        // For non-clickable lines (deleted/unchanged), render plain line number
-        return <td style={{ userSelect: 'none' }}>{lineNumber}</td>;
-    };
-
-
-    const highlightSyntax = (str: string) => {
-        if (!currentFile?.filename) return <span style={{ display: 'inline' }}>{str}</span>;
-
-        const ext = currentFile.filename.split('.').pop()?.toLowerCase();
-        let lang = 'plaintext';
-
-        if (['ts', 'tsx'].includes(ext || '')) lang = 'typescript';
-        else if (['js', 'jsx', 'cjs', 'mjs'].includes(ext || '')) lang = 'javascript';
-        else if (ext === 'json') lang = 'json';
-        else if (ext === 'css') lang = 'css';
-        else if (['md', 'markdown'].includes(ext || '')) lang = 'markdown';
-        else if (['sh', 'bash', 'zsh'].includes(ext || '')) lang = 'bash';
-        else if (['yml', 'yaml'].includes(ext || '')) lang = 'yaml';
-        else if (ext === 'py') lang = 'python';
-        else if (ext === 'go') lang = 'go';
-
-        try {
-            const grammar = Prism.languages[lang];
-            if (grammar) {
-                const highlighted = Prism.highlight(str, grammar, lang);
-                // Sanitize the highlighted HTML to prevent XSS
-                const sanitized = DOMPurify.sanitize(highlighted, {
-                    ALLOWED_TAGS: ['span'],
-                    ALLOWED_ATTR: ['class', 'style']
-                });
-                return <span dangerouslySetInnerHTML={{ __html: sanitized }} />;
-            }
-        } catch (e) {
-            // Fallback to plain text on error
-        }
-        return <span style={{ display: 'inline' }}>{str}</span>;
     };
 
     return (
@@ -324,7 +265,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                         Previewing {currentFile.filename}
                                     </p>
                                 </div>
-                            ) : isEmpty ? (
+                            ) : !hasPatch ? (
                                 <div style={{
                                     background: '#0d1117',
                                     borderRadius: '8px',
@@ -370,73 +311,45 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                     </div>
                                 </div>
                             ) : (
-                                <div className="diff-viewer" style={{ background: '#0d1117', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
-                                    <ReactDiffViewer
-                                        oldValue={oldValue}
-                                        newValue={newValue}
-                                        splitView={true}
-                                        useDarkTheme={true}
-                                        compareMethod={DiffMethod.WORDS}
-                                        hideLineNumbers={true}
-                                        renderContent={highlightSyntax}
-                                        renderGutter={renderGutter}
-                                        styles={{
-                                            diffContainer: {
-                                                lineHeight: 'normal',
-                                                tableLayout: 'fixed',
-                                                width: '100%',
+                                <div
+                                    className="diff-viewer"
+                                    style={{
+                                        background: '#0d1117',
+                                        borderRadius: '8px',
+                                        overflow: 'hidden',
+                                        border: '1px solid #30363d',
+                                        '--diff-add-line-bg-color': diffColors.addedBackground,
+                                        '--diff-add-line-num-bg-color': diffColors.addedGutterBackground,
+                                        '--diff-del-line-bg-color': diffColors.removedBackground,
+                                        '--diff-del-line-num-bg-color': diffColors.removedGutterBackground,
+                                        '--diff-add-content-highlight-bg-color': diffColors.wordAddedBackground,
+                                        '--diff-del-content-highlight-bg-color': diffColors.wordRemovedBackground,
+                                        '--diff-bg-color': '#0d1117',
+                                        '--diff-line-num-bg-color': '#0d1117',
+                                        '--diff-line-num-color': '#8b949e',
+                                        '--diff-content-color': '#c9d1d9',
+                                        '--diff-border-color': '#30363d',
+                                        fontSize: 'var(--app-font-size)',
+                                    } as React.CSSProperties}
+                                >
+                                    <DiffView
+                                        diffViewMode={DiffModeEnum.Split}
+                                        diffViewTheme="dark"
+                                        diffViewHighlight
+                                        diffViewWrap
+                                        diffViewFontSize={14}
+                                        data={{
+                                            oldFile: {
+                                                fileName: currentFile.filename,
+                                                fileLang: getFileLanguage(currentFile.filename),
+                                                content: oldFileContent,
                                             },
-                                            content: {
-                                                width: '50%',
+                                            newFile: {
+                                                fileName: currentFile.filename,
+                                                fileLang: getFileLanguage(currentFile.filename),
+                                                content: '',
                                             },
-                                            gutter: {
-                                                minWidth: '50px',
-                                                width: '50px',
-                                                paddingLeft: '10px',
-                                                paddingRight: '10px',
-                                            },
-                                            lineNumber: {
-                                                fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
-                                                fontSize: 'var(--app-font-size)',
-                                                lineHeight: 'normal !important',
-                                                paddingTop: '2px',
-                                                paddingBottom: '2px',
-                                                minWidth: '30px',
-                                            },
-                                            contentText: {
-                                                fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
-                                                fontSize: 'var(--app-font-size)',
-                                                lineHeight: 'normal !important',
-                                                paddingTop: '2px',
-                                                paddingBottom: '2px',
-                                                paddingLeft: '10px',
-                                                paddingRight: '10px',
-                                                wordBreak: 'break-all',
-                                                whiteSpace: 'pre-wrap',
-                                            },
-                                            line: {
-                                                marginTop: '0px',
-                                                marginBottom: '0px',
-                                            },
-                                            variables: {
-                                                dark: {
-                                                    diffViewerBackground: '#0d1117',
-                                                    gutterBackground: '#0d1117',
-                                                    addedBackground: diffColors.addedBackground,
-                                                    addedGutterBackground: diffColors.addedGutterBackground,
-                                                    removedBackground: diffColors.removedBackground,
-                                                    removedGutterBackground: diffColors.removedGutterBackground,
-                                                    wordAddedBackground: diffColors.wordAddedBackground,
-                                                    wordRemovedBackground: diffColors.wordRemovedBackground,
-                                                    codeFoldGutterBackground: '#161b22',
-                                                    codeFoldBackground: '#0d1117',
-                                                    emptyLineBackground: '#0d1117',
-                                                    gutterColor: '#8b949e',
-                                                    codeFoldContentColor: '#8b949e',
-                                                    diffViewerTitleBackground: '#161b22',
-                                                    diffViewerTitleColor: '#c9d1d9',
-                                                }
-                                            }
+                                            hunks: [currentFile.patch || extraContent || ''],
                                         }}
                                     />
                                 </div>

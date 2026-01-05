@@ -22,8 +22,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'diff-viewer': ['react-diff-viewer-continued'],
-          'syntax-highlighter': ['prismjs'],
+          'diff-viewer': ['@git-diff-view/react'],
         },
       },
     },
