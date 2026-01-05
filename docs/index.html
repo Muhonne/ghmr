@@ -24,8 +24,6 @@
             </div>
             <div class="nav-links">
                 <a href="https://github.com/Muhonne/ghmr">GitHub</a>
-                <a href="https://github.com/Muhonne/ghmr/releases" class="btn btn-secondary"
-                    style="padding: 0.5rem 1rem; margin-left: 1rem;">Download</a>
             </div>
         </div>
     </nav>
@@ -69,9 +67,11 @@
                 </div>
             </div>
 
+            <p style="margin: 1rem; font-size: 0.9rem; color: var(--text-secondary);">There's an unsigned mac
+                build in the root that you can download. For other platforms build yourself.</p>
             <div class="cta-group">
-                <a href="https://github.com/Muhonne/ghmr/releases/latest" class="btn btn-primary">
-                    <i data-lucide="download"></i> Releases
+                <a href="../ghmr.app" class="btn btn-primary" download>
+                    <i data-lucide="download"></i> Mac build
                 </a>
                 <a href="https://github.com/Muhonne/ghmr" class="btn btn-secondary">
                     <i data-lucide="github"></i> View Source
@@ -104,6 +104,24 @@
             <h2 style="text-align: center; margin-bottom: 3rem; font-size: 2rem;">Everything you need for better reviews
             </h2>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+                <div style="display: flex; gap: 1rem;">
+                    <i data-lucide="copy" style="color: var(--accent-color); flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem;">Copy Line Reference</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Click any line number in incoming
+                            changes to copy <code
+                                style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 3px; font-size: 0.85rem;">filename:line &lt;content&gt;</code>
+                            to clipboard.</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <i data-lucide="file-text" style="color: var(--accent-color); flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem;">Copy Raw File</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">One-click button to copy the entire
+                            file content to clipboard for quick copy-pasting into another-ai-tool.</p>
+                    </div>
+                </div>
                 <div style="display: flex; gap: 1rem;">
                     <i data-lucide="columns" style="color: var(--accent-color); flex-shrink: 0;"></i>
                     <div>
@@ -142,14 +160,6 @@
                         <h4 style="margin-bottom: 0.5rem;">Clean Dashboard</h4>
                         <p style="font-size: 0.9rem; color: var(--text-secondary);">Easily find your authored PRs with a
                             distraction-free list view.</p>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 1rem;">
-                    <i data-lucide="mouse-pointer-2" style="color: var(--accent-color); flex-shrink: 0;"></i>
-                    <div>
-                        <h4 style="margin-bottom: 0.5rem;">Zero Latency</h4>
-                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Native binary responsiveness that
-                            makes web-based tools feel sluggish.</p>
                     </div>
                 </div>
             </div>
