@@ -24,6 +24,7 @@ import { openUrl } from '../../utils/browser';
 import { CIStatusBadge } from '../atoms/CIStatusBadge';
 
 import { parsePatch } from '../../utils/patch';
+import { DiffColors } from '../../utils/secureStorage';
 
 interface ReviewModuleProps {
     mr: MergeRequest;
@@ -34,6 +35,7 @@ interface ReviewModuleProps {
     startResizing: (e: React.MouseEvent) => void;
     scrollRef: React.RefObject<HTMLDivElement | null>;
     octokit: any;
+    diffColors: DiffColors;
 }
 
 export const ReviewModule: React.FC<ReviewModuleProps> = ({
@@ -44,7 +46,8 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
     isResizing,
     startResizing,
     scrollRef,
-    octokit
+    octokit,
+    diffColors
 }) => {
     const [extraContent, setExtraContent] = React.useState<string | null>(null);
     const [imageUrl, setImageUrl] = React.useState<string | null>(null);
@@ -419,12 +422,12 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                                 dark: {
                                                     diffViewerBackground: '#0d1117',
                                                     gutterBackground: '#0d1117',
-                                                    addedBackground: '#2ea04326',
-                                                    addedGutterBackground: '#2ea0434d',
-                                                    removedBackground: '#f8514926',
-                                                    removedGutterBackground: '#f851494d',
-                                                    wordAddedBackground: '#2ea04366',
-                                                    wordRemovedBackground: '#f8514966',
+                                                    addedBackground: diffColors.addedBackground,
+                                                    addedGutterBackground: diffColors.addedGutterBackground,
+                                                    removedBackground: diffColors.removedBackground,
+                                                    removedGutterBackground: diffColors.removedGutterBackground,
+                                                    wordAddedBackground: diffColors.wordAddedBackground,
+                                                    wordRemovedBackground: diffColors.wordRemovedBackground,
                                                     codeFoldGutterBackground: '#161b22',
                                                     codeFoldBackground: '#0d1117',
                                                     emptyLineBackground: '#0d1117',
