@@ -1,3 +1,7 @@
+# 0.3.1
+
+- show version under icon
+
 # 0.3.0
 
 - remove diff colors, update website
