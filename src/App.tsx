@@ -31,6 +31,7 @@ export default function App() {
     const [selectedMrId, setSelectedMrId] = useState<number | null>(null)
     const [view, setView] = useState<View>('settings')
     const [currentFileIndex, setCurrentFileIndex] = useState(0)
+    const [currentMrIndex, setCurrentMrIndex] = useState(0)
     const [isSidebarMinified, setIsSidebarMinified] = useState(true)
     const [isTriggering, setIsTriggering] = useState(false)
     const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
@@ -270,6 +271,7 @@ export default function App() {
         setSelectedMrId(id)
         setView('detail')
         setAvailableWorkflows([])
+        setCurrentFileIndex(0)
     }, [])
 
     const toggleFileViewed = async (mrId: number, filename: string) => {
@@ -355,6 +357,47 @@ export default function App() {
                 return;
             }
 
+            if (view === 'list') {
+                if (e.key === 'ArrowDown' || e.key === 'j') {
+                    e.preventDefault();
+                    setCurrentMrIndex(p => Math.min(mrs.length - 1, p + 1));
+                }
+                if (e.key === 'ArrowUp' || e.key === 'k') {
+                    e.preventDefault();
+                    setCurrentMrIndex(p => Math.max(0, p - 1));
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const targetMr = mrs[currentMrIndex];
+                    if (targetMr) handleSelectMr(targetMr.id);
+                }
+            }
+
+            // Global Escape to mimic Back button
+            if (e.key === 'Escape' && view !== 'list') {
+                e.preventDefault();
+                setView(view === 'review' ? 'detail' : 'list');
+                return;
+            }
+
+
+
+            if (view === 'detail' && selectedMr) {
+                const files = selectedMr.files;
+                if (e.key === 'ArrowDown' || e.key === 'j') {
+                    e.preventDefault();
+                    setCurrentFileIndex(p => Math.min(files.length - 1, p + 1));
+                }
+                if (e.key === 'ArrowUp' || e.key === 'k') {
+                    e.preventDefault();
+                    setCurrentFileIndex(p => Math.max(0, p - 1));
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setView('review');
+                }
+            }
+
             if (view === 'review' && selectedMr) {
                 const files = selectedMr.files
 
@@ -427,12 +470,12 @@ export default function App() {
                         setCurrentFileIndex(p => p - 1)
                     }
                 }
-                if (e.key === 'Escape') setView('detail')
+
             }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs, fontSize])
+    }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs, fontSize, mrs, currentMrIndex])
 
     return (
         <MainLayout
@@ -463,6 +506,7 @@ export default function App() {
                             setView('review');
                         }}
                         setView={setView}
+                        selectedIndex={currentMrIndex}
                     />
                 )}
                 {view === 'detail' && selectedMr && (
@@ -481,6 +525,7 @@ export default function App() {
                         onUpdateMr={handleUpdateMr}
                         onUpdateWorkflows={setAvailableWorkflows}
                         pollInterval={pollInterval}
+                        selectedIndex={currentFileIndex}
                     />
                 )}
                 {view === 'review' && selectedMr && (

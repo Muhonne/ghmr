@@ -11,6 +11,7 @@ interface MrListProps {
     onReviewMr: (mr: MergeRequest) => void;
     onRefresh: () => void;
     setView: (view: View) => void;
+    selectedIndex: number;
 }
 
 export const MrList: React.FC<MrListProps> = ({
@@ -20,7 +21,8 @@ export const MrList: React.FC<MrListProps> = ({
     onSelectMr,
     onReviewMr,
     onRefresh,
-    setView
+    setView,
+    selectedIndex
 }) => {
     return (
         <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
@@ -72,12 +74,13 @@ export const MrList: React.FC<MrListProps> = ({
                         </div>
                     ) : (
                         <div style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
-                            {mrs.map(mr => (
+                            {mrs.map((mr, index) => (
                                 <MrListItem
                                     key={mr.id}
                                     mr={mr}
                                     onClick={() => onSelectMr(mr.id)}
                                     onReviewClick={() => onReviewMr(mr)}
+                                    isSelected={index === selectedIndex}
                                 />
                             ))}
                         </div>

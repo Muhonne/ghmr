@@ -6,12 +6,14 @@ interface Props {
     mr: MergeRequest;
     onClick: () => void;
     onReviewClick: () => void;
+    isSelected?: boolean;
 }
 
 export const MrListItem: React.FC<Props> = ({
     mr,
     onClick,
-    onReviewClick
+    onReviewClick,
+    isSelected
 }) => {
     const viewedCount = mr.files.filter(f => f.viewed).length;
     const totalFiles = mr.files.length;
@@ -29,7 +31,10 @@ export const MrListItem: React.FC<Props> = ({
                 alignItems: 'center',
                 gap: '16px',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                border: isSelected ? '1px solid var(--accent-color)' : '1px solid rgba(255,255,255,0.05)',
+                transform: isSelected ? 'scale(1.005)' : 'scale(1)',
+                transition: 'all 0.2s ease'
             }}
             onClick={onClick}
         >
