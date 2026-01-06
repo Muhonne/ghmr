@@ -8,21 +8,13 @@ import { MrDetail } from './components/organisms/MrDetail'
 import { ReviewModule } from './components/organisms/ReviewModule'
 import { Settings } from './components/organisms/Settings'
 import { isFileViewed } from './utils/reReview'
-import { secureStorage, DiffColors } from './utils/secureStorage'
+import { secureStorage } from './utils/secureStorage'
 
 export default function App() {
     const [token, setToken] = useState<string>('')
     const [fontSize, setFontSize] = useState<number>(14)
     const [pollInterval, setPollInterval] = useState<number>(5000)
     const [fileListWidth, setFileListWidth] = useState<number>(300)
-    const [diffColors, setDiffColors] = useState<DiffColors>({
-        addedBackground: '#0e1c14',
-        addedGutterBackground: '#0f1e16',
-        removedBackground: '#1c1215',
-        removedGutterBackground: '#1d1316',
-        wordAddedBackground: '#11231a',
-        wordRemovedBackground: '#22151a',
-    })
     const [isResizing, setIsResizing] = useState(false)
     const [user, setUser] = useState<User | null>(null)
     const [mrs, setMrs] = useState<MergeRequest[]>([])
@@ -50,8 +42,6 @@ export default function App() {
                 setPollInterval(localPollInterval)
                 const localWidth = await secureStorage.getFileListWidth()
                 setFileListWidth(localWidth)
-                const localDiffColors = await secureStorage.getDiffColors()
-                setDiffColors(localDiffColors)
             } catch (error) {
                 console.error('Failed to load config:', error)
             }
@@ -182,7 +172,7 @@ export default function App() {
         if (token) fetchMrs()
     }, [token, fetchMrs])
 
-    const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number, newPollInterval?: number, newDiffColors?: DiffColors) => {
+    const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number, newPollInterval?: number) => {
         try {
             if (newToken !== undefined) {
                 setToken(newToken)
@@ -199,10 +189,6 @@ export default function App() {
             if (newPollInterval !== undefined) {
                 setPollInterval(newPollInterval)
                 await secureStorage.setPollInterval(newPollInterval)
-            }
-            if (newDiffColors !== undefined) {
-                setDiffColors(newDiffColors)
-                await secureStorage.setDiffColors(newDiffColors)
             }
 
             if (newToken !== undefined) setView('list')
@@ -538,7 +524,6 @@ export default function App() {
                         startResizing={startResizing}
                         scrollRef={reviewScrollRef}
                         octokit={octokit}
-                        diffColors={diffColors}
                     />
                 )}
                 {view === 'settings' && (
@@ -549,8 +534,6 @@ export default function App() {
                         setFontSize={setFontSize}
                         pollInterval={pollInterval}
                         setPollInterval={setPollInterval}
-                        diffColors={diffColors}
-                        setDiffColors={setDiffColors}
                         onSave={handleSaveConfig}
                     />
                 )}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Settings as SettingsIcon, AlertCircle } from 'lucide-react';
 import { validateGitHubToken } from '../../utils/tokenValidation';
-import { DiffColors } from '../../utils/secureStorage';
+
 
 interface SettingsProps {
     token: string;
@@ -11,9 +11,7 @@ interface SettingsProps {
     setFontSize: (size: number) => void;
     pollInterval: number;
     setPollInterval: (interval: number) => void;
-    diffColors: DiffColors;
-    setDiffColors: (colors: DiffColors) => void;
-    onSave: (token?: string, fontSize?: number, width?: number, pollInterval?: number, diffColors?: DiffColors) => void;
+    onSave: (token?: string, fontSize?: number, width?: number, pollInterval?: number) => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
@@ -23,8 +21,6 @@ export const Settings: React.FC<SettingsProps> = ({
     setFontSize,
     pollInterval,
     setPollInterval,
-    diffColors,
-    setDiffColors,
     onSave
 }) => {
     const [tokenError, setTokenError] = useState<string>('');
@@ -42,7 +38,7 @@ export const Settings: React.FC<SettingsProps> = ({
             return;
         }
         setTokenError('');
-        onSave(token, fontSize, undefined, pollInterval, diffColors);
+        onSave(token, fontSize, undefined, pollInterval);
     };
 
     const tokenValidation = validateGitHubToken(token);
@@ -162,111 +158,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     </div>
                 </div>
 
-                <div style={{ marginBottom: '32px', borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
-                    <h3 style={{ fontSize: '15px', marginBottom: '16px', color: 'var(--text-primary)' }}>Diff Viewer Colors</h3>
-                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                        Customize the colors used in the diff viewer for better readability.
-                    </p>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                                Added Line Background
-                            </label>
-                            <input
-                                type="color"
-                                value={diffColors.addedBackground}
-                                onChange={(e) => setDiffColors({ ...diffColors, addedBackground: e.target.value })}
-                                style={{ width: '100%', height: '36px', cursor: 'pointer', borderRadius: '4px' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                                Added Gutter Background
-                            </label>
-                            <input
-                                type="color"
-                                value={diffColors.addedGutterBackground}
-                                onChange={(e) => setDiffColors({ ...diffColors, addedGutterBackground: e.target.value })}
-                                style={{ width: '100%', height: '36px', cursor: 'pointer', borderRadius: '4px' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                                Word Added Background
-                            </label>
-                            <input
-                                type="color"
-                                value={diffColors.wordAddedBackground}
-                                onChange={(e) => setDiffColors({ ...diffColors, wordAddedBackground: e.target.value })}
-                                style={{ width: '100%', height: '36px', cursor: 'pointer', borderRadius: '4px' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                                Removed Line Background
-                            </label>
-                            <input
-                                type="color"
-                                value={diffColors.removedBackground}
-                                onChange={(e) => setDiffColors({ ...diffColors, removedBackground: e.target.value })}
-                                style={{ width: '100%', height: '36px', cursor: 'pointer', borderRadius: '4px' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                                Removed Gutter Background
-                            </label>
-                            <input
-                                type="color"
-                                value={diffColors.removedGutterBackground}
-                                onChange={(e) => setDiffColors({ ...diffColors, removedGutterBackground: e.target.value })}
-                                style={{ width: '100%', height: '36px', cursor: 'pointer', borderRadius: '4px' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                                Word Removed Background
-                            </label>
-                            <input
-                                type="color"
-                                value={diffColors.wordRemovedBackground}
-                                onChange={(e) => setDiffColors({ ...diffColors, wordRemovedBackground: e.target.value })}
-                                style={{ width: '100%', height: '36px', cursor: 'pointer', borderRadius: '4px' }}
-                            />
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={() => {
-                            setDiffColors({
-                                addedBackground: '#0e1c14',
-                                addedGutterBackground: '#0f1e16',
-                                removedBackground: '#1c1215',
-                                removedGutterBackground: '#1d1316',
-                                wordAddedBackground: '#11231a',
-                                wordRemovedBackground: '#22151a',
-                            });
-                        }}
-                        style={{
-                            marginTop: '12px',
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid #30363d',
-                            borderRadius: '4px',
-                            padding: '6px 12px',
-                            color: 'var(--text-secondary)',
-                            fontSize: '11px',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        Reset to Defaults
-                    </button>
-                </div>
 
                 <button
                     className="btn-primary"

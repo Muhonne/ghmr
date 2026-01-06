@@ -8,7 +8,6 @@ import { ReviewSidebar } from '../molecules/ReviewSidebar';
 import { MergeRequest } from '../../types';
 import { openUrl } from '../../utils/browser';
 import { parsePatch } from '../../utils/patch';
-import { DiffColors } from '../../utils/secureStorage';
 
 interface ReviewModuleProps {
     mr: MergeRequest;
@@ -19,7 +18,7 @@ interface ReviewModuleProps {
     startResizing: (e: React.MouseEvent) => void;
     scrollRef: React.RefObject<HTMLDivElement | null>;
     octokit: any;
-    diffColors: DiffColors;
+
 }
 
 export const ReviewModule: React.FC<ReviewModuleProps> = ({
@@ -30,8 +29,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
     isResizing,
     startResizing,
     scrollRef,
-    octokit,
-    diffColors
+    octokit
 }) => {
     const [extraContent, setExtraContent] = useState<string | null>(null);
     const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -352,12 +350,12 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                         borderRadius: '8px',
                                         overflow: 'hidden',
                                         border: '1px solid #30363d',
-                                        '--diff-add-line-bg-color': diffColors.addedBackground,
-                                        '--diff-add-line-num-bg-color': diffColors.addedGutterBackground,
-                                        '--diff-del-line-bg-color': diffColors.removedBackground,
-                                        '--diff-del-line-num-bg-color': diffColors.removedGutterBackground,
-                                        '--diff-add-content-highlight-bg-color': diffColors.wordAddedBackground,
-                                        '--diff-del-content-highlight-bg-color': diffColors.wordRemovedBackground,
+                                        '--diff-add-line-bg-color': '#0e1c14',
+                                        '--diff-add-line-num-bg-color': '#0f1e16',
+                                        '--diff-del-line-bg-color': '#1c1215',
+                                        '--diff-del-line-num-bg-color': '#1d1316',
+                                        '--diff-add-content-highlight-bg-color': '#11231a',
+                                        '--diff-del-content-highlight-bg-color': '#22151a',
                                         '--diff-bg-color': '#0d1117',
                                         // '--diff-gutter-bg-color': '#0d1117', // Attempt to match gutter
                                         '--diff-line-num-bg-color': '#0d1117',

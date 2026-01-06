@@ -1,13 +1,6 @@
 import { Store } from '@tauri-apps/plugin-store';
 
-export interface DiffColors {
-    addedBackground: string;
-    addedGutterBackground: string;
-    removedBackground: string;
-    removedGutterBackground: string;
-    wordAddedBackground: string;
-    wordRemovedBackground: string;
-}
+
 
 export interface SecureStorage {
     getToken(): Promise<string | null>;
@@ -21,8 +14,7 @@ export interface SecureStorage {
     setViewedFiles(mrId: number, files: Record<string, string>): Promise<void>;
     getPollInterval(): Promise<number>;
     setPollInterval(ms: number): Promise<void>;
-    getDiffColors(): Promise<DiffColors>;
-    setDiffColors(colors: DiffColors): Promise<void>;
+
 }
 
 class TauriSecureStorage implements SecureStorage {
@@ -100,24 +92,7 @@ class TauriSecureStorage implements SecureStorage {
         await store.save();
     }
 
-    async getDiffColors(): Promise<DiffColors> {
-        const store = await this.getStore();
-        const colors = await store.get<DiffColors>('diff_colors');
-        return colors || {
-            addedBackground: '#0e1c14',
-            addedGutterBackground: '#0f1e16',
-            removedBackground: '#1c1215',
-            removedGutterBackground: '#1d1316',
-            wordAddedBackground: '#11231a',
-            wordRemovedBackground: '#22151a',
-        };
-    }
 
-    async setDiffColors(colors: DiffColors): Promise<void> {
-        const store = await this.getStore();
-        await store.set('diff_colors', colors);
-        await store.save();
-    }
 }
 
 // Export singleton instance
