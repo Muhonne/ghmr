@@ -8,6 +8,8 @@ import {
 import { SidebarItem } from '../molecules/SidebarItem';
 import { User, View } from '../../types';
 
+import pkg from '../../../package.json';
+
 interface SidebarProps {
     view: View;
     setView: (view: View) => void;
@@ -32,22 +34,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 justifyContent: isMinified ? 'center' : 'flex-start'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '18px' }}>
-                    <div style={{
-                        position: 'relative',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 50,
-                        height: 50,
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        backgroundColor: 'transparent'
-                    }}>
-                        <img
-                            src="/icon.png"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            alt="ghmr"
-                        />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                        <div style={{
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 50,
+                            height: 50,
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            backgroundColor: 'transparent'
+                        }}>
+                            <img
+                                src="/icon.png"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                alt="ghmr"
+                            />
+                        </div>
+                        <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 'normal', lineHeight: 1 }}>v{pkg.version}</span>
                     </div>
                     {!isMinified && <span>ghmr</span>}
                 </div>
