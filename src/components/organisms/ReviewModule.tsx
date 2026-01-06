@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { DiffView, DiffModeEnum } from '@git-diff-view/react';
+import { DiffFile, generateDiffFile } from '@git-diff-view/file';
 import '@git-diff-view/react/styles/diff-view.css';
 import { motion } from 'framer-motion';
 import { ReviewSidebar } from '../molecules/ReviewSidebar';
 import { MergeRequest } from '../../types';
-import DOMPurify from 'dompurify';
-
 import { openUrl } from '../../utils/browser';
+import { parsePatch } from '../../utils/patch';
 import { DiffColors } from '../../utils/secureStorage';
 
 interface ReviewModuleProps {
@@ -33,47 +33,22 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
     octokit,
     diffColors
 }) => {
-    const [extraContent, setExtraContent] = React.useState<string | null>(null);
-    const [imageUrl, setImageUrl] = React.useState<string | null>(null);
-    const [loadingContent, setLoadingContent] = React.useState(false);
-    const [oldFileContent, setOldFileContent] = React.useState<string>('');
+    const [extraContent, setExtraContent] = useState<string | null>(null);
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [loadingContent, setLoadingContent] = useState(false);
     const currentFile = mr.files[currentIndex];
 
-    const isImage = React.useMemo(() => {
+    const isImage = useMemo(() => {
         if (!currentFile?.filename) return false;
         const ext = currentFile.filename.split('.').pop()?.toLowerCase();
         return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp'].includes(ext || '');
     }, [currentFile]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         setExtraContent(null);
         setImageUrl(null);
         setLoadingContent(false);
-        setOldFileContent('');
     }, [currentIndex]);
-
-    // Fetch old file content for proper diff comparison
-    const fetchOldFileContent = React.useCallback(async () => {
-        if (!octokit || !currentFile || !mr.base_ref) return;
-
-        try {
-            const [owner, repo] = mr.repository.split('/');
-            const { data } = await octokit.rest.repos.getContent({
-                owner,
-                repo,
-                path: currentFile.filename,
-                ref: mr.base_ref
-            });
-
-            if ('content' in data) {
-                const decoded = atob(data.content.replace(/\n/g, ''));
-                setOldFileContent(decoded);
-            }
-        } catch (error) {
-            // File might not exist in base branch (new file)
-            setOldFileContent('');
-        }
-    }, [octokit, currentFile, mr.repository, mr.base_ref]);
 
     const handleFetchContent = async () => {
         if (!octokit || !currentFile) return;
@@ -84,12 +59,11 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                 owner,
                 repo,
                 path: currentFile.filename,
-                ref: mr.head_sha // Precise SHA
+                ref: mr.head_sha
             });
 
             if ('content' in contentData) {
                 if (isImage) {
-                    // For images, we can use the download_url or a data URI
                     if (contentData.download_url) {
                         setImageUrl(contentData.download_url);
                     } else {
@@ -99,10 +73,14 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                     }
                 } else {
                     const decoded = atob(contentData.content.replace(/\n/g, ''));
-                    // Create a synthetic patch: all additions
-                    const syntheticPatch = `@@ -0,0 +1,${decoded.split('\n').length} @@\n` +
-                        decoded.split('\n').map(line => `+${line}`).join('\n');
-                    setExtraContent(syntheticPatch);
+                    // We don't need to synthetically create a patch anymore for the new diff viewer
+                    // just set it as extra content if we want, but actually parsePatch handles it
+                    // if we pass it as the "patch" but it's not a patch...
+                    // Wait, parsePatch expects a patch string.
+                    // If we fetch full content, we should just use it as newValue.
+                    // But current logic uses parsePatch on `currentFile.patch || extraContent`.
+                    // Let's just store the content and use it directly.
+                    setExtraContent(decoded);
                 }
             }
         } catch (error) {
@@ -112,32 +90,51 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
         }
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (isImage && !imageUrl && !loadingContent) {
             handleFetchContent();
         }
     }, [isImage, currentIndex, imageUrl, loadingContent, octokit, currentFile]);
 
-    // Get file extension for language detection
+    // Parse patch to get content
+    const { oldValue, newValue, isEmpty } = useMemo(() => {
+        // If extraContent is set (from "Show Content"), it's likely the full file content (not a patch)
+        // If it's a patch, parsePatch handles it.
+        // If it's full content, we might need to handle it differently?
+        // Actually parsePatch logic:
+        /*
+            lines.forEach((line) => {
+                if (line.startsWith('@@')) ...
+                else if (line.startsWith('+')) ...
+            })
+        */
+        // If we pass raw content to parsePatch, it won't parse correctly as it expects diff markers.
+        // So we should construct the diff file manually if we fetched full content.
+
+        if (extraContent && !extraContent.startsWith('@@')) {
+            return { oldValue: '', newValue: extraContent, isEmpty: false };
+        }
+
+        return parsePatch(currentFile?.patch || extraContent || undefined);
+    }, [currentFile?.patch, extraContent]);
+
     const getFileLanguage = (filename: string): string => {
         const ext = filename.split('.').pop()?.toLowerCase() || '';
         const langMap: Record<string, string> = {
             'ts': 'typescript',
-            'tsx': 'tsx',
+            'tsx': 'typescript',
             'js': 'javascript',
-            'jsx': 'jsx',
-            'json': 'json',
-            'css': 'css',
-            'scss': 'scss',
-            'less': 'less',
-            'html': 'html',
-            'md': 'markdown',
-            'markdown': 'markdown',
+            'jsx': 'javascript',
             'py': 'python',
+            'rb': 'ruby',
             'go': 'go',
             'rs': 'rust',
             'java': 'java',
-            'rb': 'ruby',
+            'c': 'cpp',
+            'cpp': 'cpp',
+            'h': 'cpp',
+            'hpp': 'cpp',
+            'cs': 'csharp',
             'sh': 'bash',
             'bash': 'bash',
             'zsh': 'bash',
@@ -146,14 +143,51 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
             'toml': 'toml',
             'xml': 'xml',
             'sql': 'sql',
+            'json': 'json',
+            'md': 'markdown',
+            'css': 'css',
+            'html': 'html'
         };
-        return langMap[ext] || ext;
+        return langMap[ext] || 'plaintext';
     };
 
-    const hasPatch = !!(currentFile?.patch || extraContent);
+    // Create DiffFile instance
+    const diffFile = useMemo(() => {
+        if (!currentFile) return null;
 
-    const [isCopying, setIsCopying] = React.useState(false);
-    const [hasCopied, setHasCopied] = React.useState(false);
+        const fileName = currentFile.filename;
+        const lang = getFileLanguage(fileName);
+
+        // IMPORTANT: We use the DiffFile constructor. 
+        // We pass the content we derived. 
+        // We pass empty array for hunks if we want it to compute diff? 
+        // Or we pass the patch hunks?
+        // If we pass hunks, it might use them. 
+        // Let's try passing the content and letting it handle it.
+        // The constructor signature is:
+        // constructor(oldFileName, oldContent, newFileName, newContent, hunks, oldLang, newLang, originalNewFileName)
+        // But checking source, it might be:
+        // constructor(oldFile, oldContent, newFile, newContent, hunks, oldFileLang, newFileLang)
+
+        // Let's try to construct it.
+        const file = generateDiffFile(
+            fileName,
+            oldValue,
+            fileName,
+            newValue,
+            lang,
+            lang
+        );
+
+        // Initialize theme and build lines
+        file.init();
+        file.buildSplitDiffLines();
+
+        return file;
+    }, [currentFile, oldValue, newValue]);
+
+    const [isCopying, setIsCopying] = useState(false);
+    const [hasCopied, setHasCopied] = useState(false);
 
     const handleCopyRaw = async () => {
         if (!octokit || !currentFile) return;
@@ -265,7 +299,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                         Previewing {currentFile.filename}
                                     </p>
                                 </div>
-                            ) : !hasPatch ? (
+                            ) : isEmpty ? (
                                 <div style={{
                                     background: '#0d1117',
                                     borderRadius: '8px',
@@ -325,6 +359,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                         '--diff-add-content-highlight-bg-color': diffColors.wordAddedBackground,
                                         '--diff-del-content-highlight-bg-color': diffColors.wordRemovedBackground,
                                         '--diff-bg-color': '#0d1117',
+                                        // '--diff-gutter-bg-color': '#0d1117', // Attempt to match gutter
                                         '--diff-line-num-bg-color': '#0d1117',
                                         '--diff-line-num-color': '#8b949e',
                                         '--diff-content-color': '#c9d1d9',
@@ -332,26 +367,16 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                         fontSize: 'var(--app-font-size)',
                                     } as React.CSSProperties}
                                 >
-                                    <DiffView
-                                        diffViewMode={DiffModeEnum.Split}
-                                        diffViewTheme="dark"
-                                        diffViewHighlight
-                                        diffViewWrap
-                                        diffViewFontSize={14}
-                                        data={{
-                                            oldFile: {
-                                                fileName: currentFile.filename,
-                                                fileLang: getFileLanguage(currentFile.filename),
-                                                content: oldFileContent,
-                                            },
-                                            newFile: {
-                                                fileName: currentFile.filename,
-                                                fileLang: getFileLanguage(currentFile.filename),
-                                                content: '',
-                                            },
-                                            hunks: [currentFile.patch || extraContent || ''],
-                                        }}
-                                    />
+                                    {diffFile && (
+                                        <DiffView
+                                            diffFile={diffFile}
+                                            diffViewMode={DiffModeEnum.Split}
+                                            diffViewTheme="dark"
+                                            diffViewHighlight
+                                            diffViewWrap
+                                            diffViewFontSize={14}
+                                        />
+                                    )}
                                 </div>
                             )}
                         </div>

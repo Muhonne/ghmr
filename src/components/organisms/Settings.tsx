@@ -116,7 +116,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
                 <div style={{ marginBottom: '32px' }}>
                     <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                        Preferred Font Size
+                        Preferred Font Size (Cmd/Ctrl +/- to adjust)
                     </label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <input

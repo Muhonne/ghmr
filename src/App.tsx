@@ -330,6 +330,24 @@ export default function App() {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Global shortcut: Cmd/Ctrl + Plus to increase font size
+            if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
+                e.preventDefault();
+                const newSize = Math.min(24, fontSize + 1);
+                setFontSize(newSize);
+                secureStorage.setFontSize(newSize);
+                return;
+            }
+
+            // Global shortcut: Cmd/Ctrl + Minus to decrease font size
+            if ((e.metaKey || e.ctrlKey) && e.key === '-') {
+                e.preventDefault();
+                const newSize = Math.max(10, fontSize - 1);
+                setFontSize(newSize);
+                secureStorage.setFontSize(newSize);
+                return;
+            }
+
             // Global shortcut: Cmd+R to refresh (only in list view) - now debounced
             if (view === 'list' && (e.metaKey || e.ctrlKey) && e.key === 'r') {
                 e.preventDefault();
@@ -414,7 +432,7 @@ export default function App() {
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs])
+    }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs, fontSize])
 
     return (
         <MainLayout
