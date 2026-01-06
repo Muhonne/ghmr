@@ -15,7 +15,8 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "release:mac": "tauri build --bundles app && rm -rf ./ghmr.app && cp -r src-tauri/target/release/bundle/macos/ghmr.app ./ghmr.app"
+    "release:mac": "tauri build --bundles app && rm -rf ./ghmr.app && cp -r src-tauri/target/release/bundle/macos/ghmr.app ./ghmr.app",
+    "release_minor": "./scripts/release_minor.sh"
   },
   "dependencies": {
     "@git-diff-view/core": "^0.0.35",

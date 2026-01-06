@@ -1,3 +1,3 @@
-## 0.2.0
-Show actions
+## 0.2.1
+Show actions and whatnot
 
