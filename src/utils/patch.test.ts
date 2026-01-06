@@ -27,4 +27,15 @@ describe('patch parsing logic', () => {
         expect(result.oldValue).toContain('line1\n \nline10');
         expect(result.newValue).toContain('line1\n \nline10');
     });
+
+    it('handles mixed content changes', () => {
+        const patch = `@@ -1,4 +1,4 @@
+ context1
+-removed
++added
+ context2`;
+        const result = parsePatch(patch);
+        expect(result.oldValue).toBe('context1\nremoved\ncontext2');
+        expect(result.newValue).toBe('context1\nadded\ncontext2');
+    });
 });

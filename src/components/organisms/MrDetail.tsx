@@ -18,6 +18,7 @@ interface MrDetailProps {
     onUpdateMr: (mr: MergeRequest) => void;
     onUpdateWorkflows: (workflows: Workflow[]) => void;
     pollInterval: number;
+    selectedIndex?: number;
 }
 
 export const MrDetail: React.FC<MrDetailProps> = ({
@@ -31,14 +32,24 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     octokit,
     onUpdateMr,
     onUpdateWorkflows,
-    pollInterval
+    pollInterval,
+    selectedIndex,
 }) => {
     const mrRef = useRef(mr);
     const workflowsFetchedRef = useRef<string | null>(null);
+    const activeItemRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (selectedIndex !== undefined && activeItemRef.current) {
+            activeItemRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [selectedIndex]);
 
     useEffect(() => {
         mrRef.current = mr;
     }, [mr]);
+
+
 
     const fetchMrCiStatus = useCallback(async (owner: string, repo: string, headSha: string, headRef: string): Promise<CIStatus | undefined> => {
         if (!octokit) return undefined;
@@ -228,10 +239,13 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                 {mr.files.map((file: any, idx: number) => (
                     <div
                         key={idx}
+                        ref={idx === selectedIndex ? activeItemRef : null}
                         className="sidebar-item"
                         style={{
                             margin: 0, borderRadius: 0, borderBottom: idx === mr.files.length - 1 ? 'none' : '1px solid var(--border-color)',
-                            padding: '12px 20px', cursor: 'pointer'
+                            padding: '12px 20px', cursor: 'pointer',
+                            background: idx === selectedIndex ? 'rgba(255,255,255,0.08)' : 'transparent',
+                            borderLeft: idx === selectedIndex ? '2px solid var(--accent-color)' : '2px solid transparent'
                         }}
                         onClick={() => onFileClick(idx)}
                     >

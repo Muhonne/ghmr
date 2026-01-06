@@ -8,21 +8,13 @@ import { MrDetail } from './components/organisms/MrDetail'
 import { ReviewModule } from './components/organisms/ReviewModule'
 import { Settings } from './components/organisms/Settings'
 import { isFileViewed } from './utils/reReview'
-import { secureStorage, DiffColors } from './utils/secureStorage'
+import { secureStorage } from './utils/secureStorage'
 
 export default function App() {
     const [token, setToken] = useState<string>('')
     const [fontSize, setFontSize] = useState<number>(14)
     const [pollInterval, setPollInterval] = useState<number>(5000)
     const [fileListWidth, setFileListWidth] = useState<number>(300)
-    const [diffColors, setDiffColors] = useState<DiffColors>({
-        addedBackground: '#0e1c14',
-        addedGutterBackground: '#0f1e16',
-        removedBackground: '#1c1215',
-        removedGutterBackground: '#1d1316',
-        wordAddedBackground: '#11231a',
-        wordRemovedBackground: '#22151a',
-    })
     const [isResizing, setIsResizing] = useState(false)
     const [user, setUser] = useState<User | null>(null)
     const [mrs, setMrs] = useState<MergeRequest[]>([])
@@ -31,6 +23,7 @@ export default function App() {
     const [selectedMrId, setSelectedMrId] = useState<number | null>(null)
     const [view, setView] = useState<View>('settings')
     const [currentFileIndex, setCurrentFileIndex] = useState(0)
+    const [currentMrIndex, setCurrentMrIndex] = useState(0)
     const [isSidebarMinified, setIsSidebarMinified] = useState(true)
     const [isTriggering, setIsTriggering] = useState(false)
     const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
@@ -49,8 +42,6 @@ export default function App() {
                 setPollInterval(localPollInterval)
                 const localWidth = await secureStorage.getFileListWidth()
                 setFileListWidth(localWidth)
-                const localDiffColors = await secureStorage.getDiffColors()
-                setDiffColors(localDiffColors)
             } catch (error) {
                 console.error('Failed to load config:', error)
             }
@@ -181,7 +172,7 @@ export default function App() {
         if (token) fetchMrs()
     }, [token, fetchMrs])
 
-    const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number, newPollInterval?: number, newDiffColors?: DiffColors) => {
+    const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number, newPollInterval?: number) => {
         try {
             if (newToken !== undefined) {
                 setToken(newToken)
@@ -198,10 +189,6 @@ export default function App() {
             if (newPollInterval !== undefined) {
                 setPollInterval(newPollInterval)
                 await secureStorage.setPollInterval(newPollInterval)
-            }
-            if (newDiffColors !== undefined) {
-                setDiffColors(newDiffColors)
-                await secureStorage.setDiffColors(newDiffColors)
             }
 
             if (newToken !== undefined) setView('list')
@@ -270,6 +257,7 @@ export default function App() {
         setSelectedMrId(id)
         setView('detail')
         setAvailableWorkflows([])
+        setCurrentFileIndex(0)
     }, [])
 
     const toggleFileViewed = async (mrId: number, filename: string) => {
@@ -330,11 +318,70 @@ export default function App() {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Global shortcut: Cmd/Ctrl + Plus to increase font size
+            if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
+                e.preventDefault();
+                const newSize = Math.min(24, fontSize + 1);
+                setFontSize(newSize);
+                secureStorage.setFontSize(newSize);
+                return;
+            }
+
+            // Global shortcut: Cmd/Ctrl + Minus to decrease font size
+            if ((e.metaKey || e.ctrlKey) && e.key === '-') {
+                e.preventDefault();
+                const newSize = Math.max(10, fontSize - 1);
+                setFontSize(newSize);
+                secureStorage.setFontSize(newSize);
+                return;
+            }
+
             // Global shortcut: Cmd+R to refresh (only in list view) - now debounced
             if (view === 'list' && (e.metaKey || e.ctrlKey) && e.key === 'r') {
                 e.preventDefault();
                 debouncedFetchMrs();
                 return;
+            }
+
+            if (view === 'list') {
+                if (e.key === 'ArrowDown' || e.key === 'j') {
+                    e.preventDefault();
+                    setCurrentMrIndex(p => Math.min(mrs.length - 1, p + 1));
+                }
+                if (e.key === 'ArrowUp' || e.key === 'k') {
+                    e.preventDefault();
+                    setCurrentMrIndex(p => Math.max(0, p - 1));
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const targetMr = mrs[currentMrIndex];
+                    if (targetMr) handleSelectMr(targetMr.id);
+                }
+            }
+
+            // Global Escape to mimic Back button
+            if (e.key === 'Escape' && view !== 'list') {
+                e.preventDefault();
+                setView(view === 'review' ? 'detail' : 'list');
+                return;
+            }
+
+
+
+            if (view === 'detail' && selectedMr) {
+                const files = selectedMr.files;
+                if (e.key === 'ArrowDown' || e.key === 'j') {
+                    e.preventDefault();
+                    setCurrentFileIndex(p => Math.min(files.length - 1, p + 1));
+                }
+                if (e.key === 'ArrowUp' || e.key === 'k') {
+                    e.preventDefault();
+                    setCurrentFileIndex(p => Math.max(0, p - 1));
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setView('review');
+                }
             }
 
             if (view === 'review' && selectedMr) {
@@ -409,12 +456,12 @@ export default function App() {
                         setCurrentFileIndex(p => p - 1)
                     }
                 }
-                if (e.key === 'Escape') setView('detail')
+
             }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs])
+    }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs, fontSize, mrs, currentMrIndex])
 
     return (
         <MainLayout
@@ -445,6 +492,7 @@ export default function App() {
                             setView('review');
                         }}
                         setView={setView}
+                        selectedIndex={currentMrIndex}
                     />
                 )}
                 {view === 'detail' && selectedMr && (
@@ -463,6 +511,7 @@ export default function App() {
                         onUpdateMr={handleUpdateMr}
                         onUpdateWorkflows={setAvailableWorkflows}
                         pollInterval={pollInterval}
+                        selectedIndex={currentFileIndex}
                     />
                 )}
                 {view === 'review' && selectedMr && (
@@ -475,7 +524,6 @@ export default function App() {
                         startResizing={startResizing}
                         scrollRef={reviewScrollRef}
                         octokit={octokit}
-                        diffColors={diffColors}
                     />
                 )}
                 {view === 'settings' && (
@@ -486,8 +534,6 @@ export default function App() {
                         setFontSize={setFontSize}
                         pollInterval={pollInterval}
                         setPollInterval={setPollInterval}
-                        diffColors={diffColors}
-                        setDiffColors={setDiffColors}
                         onSave={handleSaveConfig}
                     />
                 )}
