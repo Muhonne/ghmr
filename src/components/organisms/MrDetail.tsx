@@ -5,6 +5,7 @@ import { MergeRequest, MRFile, Workflow, CIStatus, CheckRun } from '../../types'
 import { openUrl } from '../../utils/browser';
 import { WorkflowRuns } from './WorkflowRuns';
 import { calculateCIStatus } from '../../utils/ci';
+import { ReviewStats, useReviewStats } from '../molecules/ReviewStats';
 
 interface MrDetailProps {
     mr: MergeRequest;
@@ -38,6 +39,8 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     const mrRef = useRef(mr);
     const workflowsFetchedRef = useRef<string | null>(null);
     const activeItemRef = useRef<HTMLDivElement>(null);
+
+    const { additions, deletions } = useReviewStats(mr.files);
 
     useEffect(() => {
         if (selectedIndex !== undefined && activeItemRef.current) {
@@ -171,6 +174,11 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                     <div>
                         <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>{mr.title}</h2>
                         <div style={{ display: 'flex', gap: '12px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                            <div style={{ display: 'flex', gap: '4px', fontWeight: 500 }}>
+                                <span style={{ color: '#4caf50' }}>+{additions}</span>
+                                <span style={{ color: '#f44336' }}>-{deletions}</span>
+                            </div>
+                            <span>•</span>
                             <span>#{mr.number}</span>
                             <span>•</span>
                             <span>{mr.author}</span>
@@ -230,9 +238,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '18px' }}>Files Changed ({mr.files.length})</h3>
-                <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                    {mr.files.filter((f: MRFile) => f.viewed).length} of {mr.files.length} reviewed
-                </div>
+                <ReviewStats files={mr.files} />
             </div>
 
             <div className="glass" style={{ borderRadius: '12px', overflow: 'hidden' }}>

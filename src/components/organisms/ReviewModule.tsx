@@ -5,6 +5,7 @@ import { DiffFile, generateDiffFile } from '@git-diff-view/file';
 import '@git-diff-view/react/styles/diff-view.css';
 import { motion } from 'framer-motion';
 import { ReviewSidebar } from '../molecules/ReviewSidebar';
+import { ReviewStats } from '../molecules/ReviewStats';
 import { MergeRequest } from '../../types';
 import { openUrl } from '../../utils/browser';
 import { parsePatch } from '../../utils/patch';
@@ -93,6 +94,30 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
             handleFetchContent();
         }
     }, [isImage, currentIndex, imageUrl, loadingContent, octokit, currentFile]);
+
+    // Scroll to top when file changes
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = 0;
+        }
+    }, [currentIndex, scrollRef]);
+
+    // Handle PageUp/PageDown
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!scrollRef.current) return;
+
+            if (e.key === 'PageUp') {
+                e.preventDefault();
+                scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (e.key === 'PageDown') {
+                e.preventDefault();
+                scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [scrollRef]);
 
     // Parse patch to get content
     const { oldValue, newValue, isEmpty } = useMemo(() => {
@@ -246,15 +271,15 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                         padding: '16px 20px 12px 20px',
                         borderBottom: '1px solid #30363d',
                         display: 'flex',
-                        justifyContent: 'space-between',
                         alignItems: 'center',
                         background: '#0d1117',
                         zIndex: 10
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <code style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{currentFile?.filename}</code>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <ReviewStats files={mr.files} compact />
                         </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <code style={{ color: 'var(--text-secondary)', fontSize: '13px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentFile?.filename}</code>
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                             <button
                                 onClick={handleCopyRaw}
                                 disabled={isCopying}

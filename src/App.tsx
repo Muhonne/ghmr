@@ -35,7 +35,10 @@ export default function App() {
         const loadAppConfig = async () => {
             try {
                 const localToken = await secureStorage.getToken()
-                if (localToken) setToken(localToken)
+                if (localToken) {
+                    setToken(localToken)
+                    setView('list')
+                }
                 const localFontSize = await secureStorage.getFontSize()
                 setFontSize(localFontSize)
                 const localPollInterval = await secureStorage.getPollInterval()

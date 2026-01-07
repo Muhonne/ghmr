@@ -95,5 +95,59 @@ class TauriSecureStorage implements SecureStorage {
 
 }
 
+class WebSecureStorage implements SecureStorage {
+    async getToken(): Promise<string | null> {
+        return localStorage.getItem('gh_token');
+    }
+
+    async setToken(token: string): Promise<void> {
+        localStorage.setItem('gh_token', token);
+    }
+
+    async removeToken(): Promise<void> {
+        localStorage.removeItem('gh_token');
+    }
+
+    async getFontSize(): Promise<number> {
+        const size = localStorage.getItem('app_font_size');
+        return size ? parseInt(size, 10) : 14;
+    }
+
+    async setFontSize(size: number): Promise<void> {
+        localStorage.setItem('app_font_size', size.toString());
+    }
+
+    async getFileListWidth(): Promise<number> {
+        const width = localStorage.getItem('file_list_width');
+        return width ? parseInt(width, 10) : 300;
+    }
+
+    async setFileListWidth(width: number): Promise<void> {
+        localStorage.setItem('file_list_width', width.toString());
+    }
+
+    async getViewedFiles(mrId: number): Promise<Record<string, string>> {
+        const viewed = localStorage.getItem(`viewed_${mrId}`);
+        return viewed ? JSON.parse(viewed) : {};
+    }
+
+    async setViewedFiles(mrId: number, files: Record<string, string>): Promise<void> {
+        localStorage.setItem(`viewed_${mrId}`, JSON.stringify(files));
+    }
+
+    async getPollInterval(): Promise<number> {
+        const interval = localStorage.getItem('poll_interval');
+        return interval ? parseInt(interval, 10) : 5000;
+    }
+
+    async setPollInterval(ms: number): Promise<void> {
+        localStorage.setItem('poll_interval', ms.toString());
+    }
+}
+
+// Check for Tauri environment
+// @ts-ignore
+const isTauri = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
+
 // Export singleton instance
-export const secureStorage: SecureStorage = new TauriSecureStorage();
+export const secureStorage: SecureStorage = isTauri ? new TauriSecureStorage() : new WebSecureStorage();
