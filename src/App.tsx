@@ -99,6 +99,12 @@ export default function App() {
                         pull_number: pull.number
                     })
 
+                    const { data: commitsData } = await octokit.rest.pulls.listCommits({
+                        owner,
+                        repo,
+                        pull_number: pull.number
+                    })
+
 
                     const savedViewedForMr = await secureStorage.getViewedFiles(pull.id)
 
@@ -121,6 +127,12 @@ export default function App() {
                             patch: f.patch,
                             sha: f.sha,
                             viewed: isFileViewed(savedViewedForMr[f.filename], f.sha)
+                        })),
+                        commits: (commitsData || []).map((c: any) => ({
+                            sha: c.sha,
+                            message: c.commit.message.split('\n')[0], // First line only
+                            author: c.commit.author?.name || c.author?.login || 'Unknown',
+                            date: c.commit.author?.date || ''
                         }))
                     }
                 } catch (e) {

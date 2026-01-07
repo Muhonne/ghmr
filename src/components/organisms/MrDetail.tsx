@@ -1,6 +1,7 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { motion } from 'framer-motion';
-import { Play, ExternalLink, FileText, CheckCircle2, Circle, Clock } from 'lucide-react';
+import { Play, ExternalLink, FileText, CheckCircle2, Circle, Clock, GitCommit } from 'lucide-react';
 import { MergeRequest, MRFile, Workflow, CIStatus, CheckRun } from '../../types';
 import { openUrl } from '../../utils/browser';
 import { WorkflowRuns } from './WorkflowRuns';
@@ -39,6 +40,9 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     const mrRef = useRef(mr);
     const workflowsFetchedRef = useRef<string | null>(null);
     const activeItemRef = useRef<HTMLDivElement>(null);
+    const commitsRef = useRef<HTMLDivElement>(null);
+    const [showCommits, setShowCommits] = useState(false);
+    const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
 
     const { additions, deletions } = useReviewStats(mr.files);
 
@@ -173,7 +177,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
                     <div>
                         <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>{mr.title}</h2>
-                        <div style={{ display: 'flex', gap: '12px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                        <div style={{ display: 'flex', gap: '12px', color: 'var(--text-secondary)', fontSize: '14px', alignItems: 'center' }}>
                             <div style={{ display: 'flex', gap: '4px', fontWeight: 500 }}>
                                 <span style={{ color: '#4caf50' }}>+{additions}</span>
                                 <span style={{ color: '#f44336' }}>-{deletions}</span>
@@ -184,6 +188,67 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                             <span>{mr.author}</span>
                             <span>•</span>
                             <span>{mr.repository}</span>
+                            {mr.commits && mr.commits.length > 0 && (
+                                <>
+                                    <span>•</span>
+                                    <div
+                                        ref={commitsRef}
+                                        style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                                        onMouseEnter={() => {
+                                            if (commitsRef.current) {
+                                                const rect = commitsRef.current.getBoundingClientRect();
+                                                setTooltipPos({ top: rect.bottom, left: rect.left });
+                                            }
+                                            setShowCommits(true);
+                                        }}
+                                        onMouseLeave={() => setShowCommits(false)}
+                                    >
+                                        <GitCommit size={14} />
+                                        <span>{mr.commits.length} commit{mr.commits.length !== 1 ? 's' : ''}</span>
+                                    </div>
+                                </>
+                            )}
+                            {showCommits && mr.commits && mr.commits.length > 0 && ReactDOM.createPortal(
+                                <div
+                                    style={{
+                                        position: 'fixed',
+                                        top: tooltipPos.top,
+                                        left: tooltipPos.left,
+                                        background: '#1a1a1a',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '8px',
+                                        padding: '8px 0',
+                                        minWidth: '350px',
+                                        maxWidth: '500px',
+                                        maxHeight: '300px',
+                                        overflowY: 'auto',
+                                        zIndex: 9999,
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                                    }}
+                                    onMouseEnter={() => setShowCommits(true)}
+                                    onMouseLeave={() => setShowCommits(false)}
+                                >
+                                    {mr.commits.map((commit, idx) => (
+                                        <div
+                                            key={commit.sha}
+                                            style={{
+                                                padding: '8px 12px',
+                                                borderBottom: idx < mr.commits!.length - 1 ? '1px solid var(--border-color)' : 'none',
+                                                fontSize: '12px'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                <code style={{ color: 'var(--accent-color)', fontSize: '11px' }}>{commit.sha.slice(0, 7)}</code>
+                                                <span style={{ color: 'var(--text-secondary)' }}>{commit.author}</span>
+                                            </div>
+                                            <div style={{ color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {commit.message}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>,
+                                document.body
+                            )}
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>

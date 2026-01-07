@@ -20,6 +20,13 @@ export interface Workflow {
     name: string;
 }
 
+export interface Commit {
+    sha: string;
+    message: string;
+    author: string;
+    date: string;
+}
+
 export interface MergeRequest {
     id: number
     number: number
@@ -32,6 +39,7 @@ export interface MergeRequest {
     head_sha: string
     status: 'open' | 'closed' | 'merged'
     files: MRFile[]
+    commits?: Commit[]
     ci_status?: CIStatus
 }
 
