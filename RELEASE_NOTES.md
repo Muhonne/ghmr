@@ -1,3 +1,11 @@
+# 0.3.2
+feat: add review progress stats
+- Add ReviewStats component showing GitHub-style line counts
+- Display +added/-removed lines with viewed/total breakdown
+- Show review percentage badge in Files Changed header
+- Add compact stats view to Review diff header
+- Stats on left, filename centered, copy button on right
+
 # 0.3.1
 
 - show version under icon
