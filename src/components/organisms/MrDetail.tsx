@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { motion } from 'framer-motion';
 import { Play, ExternalLink, FileText, CheckCircle2, Circle, Clock, GitCommit } from 'lucide-react';
-import { MergeRequest, MRFile, Workflow, CIStatus, CheckRun } from '../../types';
+import { MergeRequest, Workflow, CIStatus } from '../../types';
 import { openUrl } from '../../utils/browser';
 import { WorkflowRuns } from './WorkflowRuns';
 import { calculateCIStatus } from '../../utils/ci';

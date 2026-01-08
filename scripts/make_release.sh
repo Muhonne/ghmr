@@ -30,13 +30,27 @@ fs.writeFileSync(path, JSON.stringify(conf, null, 2));
 "
 
 echo "Updating RELEASE_NOTES.md..."
-# Comparing branch to main
-COMMITS=$(git log main..HEAD --pretty=format:"- %s")
+
+# Find the last release commit (looks for commits starting with "v" followed by version number)
+LAST_RELEASE_COMMIT=$(git log --oneline --all | grep -E "^[a-f0-9]+ v[0-9]+\.[0-9]+\.[0-9]+" | head -n 1 | awk '{print $1}')
+
+if [ -z "$LAST_RELEASE_COMMIT" ]; then
+    echo "Warning: No previous release commit found. Getting last 10 commits."
+    COMMITS=$(git log -10 --pretty=format:"- %s")
+else
+    echo "Found last release at commit: $LAST_RELEASE_COMMIT"
+    # Get commits since that release (excluding the release commit itself)
+    COMMITS=$(git log ${LAST_RELEASE_COMMIT}..HEAD --pretty=format:"- %s")
+fi
 
 if [ -z "$COMMITS" ]; then
-    echo "Warning: No commits found between main and HEAD. Using placeholder."
+    echo "Warning: No commits found since last release. Using placeholder."
     COMMITS="- Maintenance update"
 fi
+
+echo "Commits to include:"
+echo "$COMMITS"
+echo ""
 
 # Prepend to RELEASE_NOTES.md
 TEMP_NOTES=$(mktemp)
