@@ -93,11 +93,19 @@ export default function App() {
                         pull_number: pull.number
                     })
 
-                    const { data: files } = await octokit.rest.pulls.listFiles({
-                        owner,
-                        repo,
-                        pull_number: pull.number
-                    })
+                    // Fetch all files using pagination (GitHub defaults to 30 per page, max 100)
+                    const files: any[] = [];
+                    for await (const response of octokit.paginate.iterator(
+                        octokit.rest.pulls.listFiles,
+                        {
+                            owner,
+                            repo,
+                            pull_number: pull.number,
+                            per_page: 100
+                        }
+                    )) {
+                        files.push(...response.data);
+                    }
 
                     const { data: commitsData } = await octokit.rest.pulls.listCommits({
                         owner,
