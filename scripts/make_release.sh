@@ -69,7 +69,7 @@ echo "Running release build..."
 npm run release:mac
 
 echo "Committing release changes..."
-git add package.json package-lock.json src-tauri/tauri.conf.json RELEASE_NOTES.md
+git add .
 git commit -m "v$VERSION"
 
 echo "Release v$VERSION completed successfully."

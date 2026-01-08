@@ -1,3 +1,7 @@
+# 0.4.0
+
+- refactor: redesign MrDetail layout with side-by-side Branch and Workflow Runs
+
 # 0.3.5
 
 - fix left/right file scrolling
