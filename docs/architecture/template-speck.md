@@ -1,6 +1,6 @@
 # Feature Specification Template
 
-This template outlines the standard format for feature specifications in the `docs/specs/` directory.
+This template outlines the standard format for feature specifications in the `docs/architecture/` directory.
 
 ## When to Create a Spec File
 
@@ -37,6 +37,11 @@ Spec files should be created for:
 [Use Gherkin syntax for user-facing features]
 
 ```gherkin
+Feature: [Feature Name]
+  As a [role]
+  I want [capability]
+  So that [benefit]
+
   Scenario: [Scenario Name]
     Given [precondition]
     When [action]
@@ -44,3 +49,6 @@ Spec files should be created for:
 ```
 
 ## 4. Technical Requirements
+
+[Implementation details, data models, API calls, etc.]
+```

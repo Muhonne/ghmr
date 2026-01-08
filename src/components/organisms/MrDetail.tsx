@@ -1,7 +1,7 @@
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { motion } from 'framer-motion';
-import { Play, ExternalLink, FileText, CheckCircle2, Circle, Clock, GitCommit } from 'lucide-react';
+import { Play, ExternalLink, FileText, CheckCircle2, Circle, Clock, GitCommit, Folder, ChevronRight, ChevronDown } from 'lucide-react';
 import { MergeRequest, Workflow, CIStatus } from '../../types';
 import { openUrl } from '../../utils/browser';
 import { WorkflowRuns } from './WorkflowRuns';
@@ -45,6 +45,45 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
 
     const { additions, deletions } = useReviewStats(mr.files);
+
+    // State for collapsed directories
+    const [collapsedDirs, setCollapsedDirs] = useState<Set<string>>(new Set());
+
+    // Group files by directory (same as ReviewSidebar)
+    const groupedFiles = useMemo(() => {
+        const groups: { [path: string]: { file: any; index: number }[] } = {};
+
+        mr.files.forEach((file: any, index: number) => {
+            const parts = file.filename.split('/');
+            const dirPath = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+
+            if (!groups[dirPath]) {
+                groups[dirPath] = [];
+            }
+            groups[dirPath].push({ file, index });
+        });
+
+        // Sort directories alphabetically, with root files first
+        const sortedKeys = Object.keys(groups).sort((a, b) => {
+            if (a === '') return -1;
+            if (b === '') return 1;
+            return a.localeCompare(b);
+        });
+
+        return { groups, sortedKeys };
+    }, [mr.files]);
+
+    const toggleDir = (dir: string) => {
+        setCollapsedDirs(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(dir)) {
+                newSet.delete(dir);
+            } else {
+                newSet.add(dir);
+            }
+            return newSet;
+        });
+    };
 
     useEffect(() => {
         if (selectedIndex !== undefined && activeItemRef.current) {
@@ -174,39 +213,47 @@ export const MrDetail: React.FC<MrDetailProps> = ({
             style={{ padding: '64px 32px 32px 32px', maxWidth: '1000px', margin: '0 auto', width: '100%' }}
         >
             <div className="glass" style={{ padding: '24px', borderRadius: '16px', marginBottom: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                    <div>
-                        <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>{mr.title}</h2>
-                        <div style={{ display: 'flex', gap: '12px', color: 'var(--text-secondary)', fontSize: '14px', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', gap: '4px', fontWeight: 500 }}>
-                                <span style={{ color: '#4caf50' }}>+{additions}</span>
-                                <span style={{ color: '#f44336' }}>-{deletions}</span>
+                {/* Title with GitHub link */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                    <h2 style={{ fontSize: '24px', margin: 0 }}>{mr.title}</h2>
+                    <ExternalLink
+                        size={18}
+                        color="var(--text-secondary)"
+                        style={{ cursor: 'pointer', flexShrink: 0 }}
+                        onClick={() => openUrl(`https://github.com/${mr.repository}/pull/${mr.number}`)}
+                    />
+                </div>
+
+                <div style={{ display: 'flex', gap: '24px' }}>
+                    {/* Left column: Branch and Actions */}
+                    <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '8px' }}>Branch</div>
+                            <div style={{
+                                fontFamily: 'monospace',
+                                background: 'rgba(255,255,255,0.05)',
+                                padding: '10px 14px',
+                                borderRadius: '8px',
+                                fontSize: '13px'
+                            }}>
+                                {mr.base_ref} ← {mr.head_ref}
                             </div>
-                            <span>•</span>
-                            <span>#{mr.number}</span>
-                            <span>•</span>
-                            <span>{mr.author}</span>
-                            <span>•</span>
-                            <span>{mr.repository}</span>
                             {mr.commits && mr.commits.length > 0 && (
-                                <>
-                                    <span>•</span>
-                                    <div
-                                        ref={commitsRef}
-                                        style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                                        onMouseEnter={() => {
-                                            if (commitsRef.current) {
-                                                const rect = commitsRef.current.getBoundingClientRect();
-                                                setTooltipPos({ top: rect.bottom, left: rect.left });
-                                            }
-                                            setShowCommits(true);
-                                        }}
-                                        onMouseLeave={() => setShowCommits(false)}
-                                    >
-                                        <GitCommit size={14} />
-                                        <span>{mr.commits.length} commit{mr.commits.length !== 1 ? 's' : ''}</span>
-                                    </div>
-                                </>
+                                <div
+                                    ref={commitsRef}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer' }}
+                                    onMouseEnter={() => {
+                                        if (commitsRef.current) {
+                                            const rect = commitsRef.current.getBoundingClientRect();
+                                            setTooltipPos({ top: rect.bottom + 4, left: rect.left });
+                                        }
+                                        setShowCommits(true);
+                                    }}
+                                    onMouseLeave={() => setShowCommits(false)}
+                                >
+                                    <GitCommit size={14} />
+                                    <span>{mr.commits.length} commit{mr.commits.length !== 1 ? 's' : ''}</span>
+                                </div>
                             )}
                             {showCommits && mr.commits && mr.commits.length > 0 && ReactDOM.createPortal(
                                 <div
@@ -228,78 +275,85 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                     onMouseEnter={() => setShowCommits(true)}
                                     onMouseLeave={() => setShowCommits(false)}
                                 >
-                                    {mr.commits.map((commit, idx) => (
-                                        <div
-                                            key={commit.sha}
-                                            style={{
-                                                padding: '8px 12px',
-                                                borderBottom: idx < mr.commits!.length - 1 ? '1px solid var(--border-color)' : 'none',
-                                                fontSize: '12px'
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                                <code style={{ color: 'var(--accent-color)', fontSize: '11px' }}>{commit.sha.slice(0, 7)}</code>
-                                                <span style={{ color: 'var(--text-secondary)' }}>{commit.author}</span>
+                                    {[...mr.commits].reverse().map((commit, idx) => {
+                                        const formatRelativeTime = (dateStr: string) => {
+                                            if (!dateStr) return '';
+                                            const date = new Date(dateStr);
+                                            const now = new Date();
+                                            const diffMs = now.getTime() - date.getTime();
+                                            const diffMins = Math.floor(diffMs / 60000);
+                                            const diffHours = Math.floor(diffMs / 3600000);
+                                            const diffDays = Math.floor(diffMs / 86400000);
+                                            if (diffMins < 1) return 'just now';
+                                            if (diffMins < 60) return `${diffMins}m ago`;
+                                            if (diffHours < 24) return `${diffHours}h ago`;
+                                            if (diffDays < 7) return `${diffDays}d ago`;
+                                            return date.toLocaleDateString();
+                                        };
+                                        return (
+                                            <div
+                                                key={commit.sha}
+                                                style={{
+                                                    padding: '8px 12px',
+                                                    borderBottom: idx < mr.commits!.length - 1 ? '1px solid var(--border-color)' : 'none',
+                                                    fontSize: '12px'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                    <code style={{ color: 'var(--accent-color)', fontSize: '11px' }}>{commit.sha.slice(0, 7)}</code>
+                                                    <span style={{ color: 'var(--text-secondary)' }}>{commit.author}</span>
+                                                    <span style={{ marginLeft: 'auto', color: 'var(--text-secondary)', opacity: 0.7, fontSize: '11px' }}>
+                                                        {formatRelativeTime(commit.date)}
+                                                    </span>
+                                                </div>
+                                                <div style={{ color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {commit.message}
+                                                </div>
                                             </div>
-                                            <div style={{ color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {commit.message}
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>,
                                 document.body
                             )}
                         </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        <button className="btn-primary" onClick={onStartReview} style={{ padding: '10px 20px' }}>
-                            Review
-                        </button>
-                        <button
-                            onClick={() => openUrl(`https://github.com/${mr.repository}/pull/${mr.number}`)}
-                            className="btn-secondary"
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px' }}
-                        >
-                            <ExternalLink size={16} />
-                            <span>GitHub</span>
-                        </button>
-                    </div>
-                </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-                    <div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px' }}>Branch</div>
-                        <div style={{ fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px' }}>
-                            {mr.base_ref} ← {mr.head_ref}
-                        </div>
+                        {/* Spacer to push workflow triggers to bottom */}
+                        <div style={{ flexGrow: 1 }} />
+
+                        {/* Workflow trigger buttons - aligned to bottom */}
+                        {onTriggerWorkflow && workflows.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '16px' }}>
+                                {workflows.map(workflow => (
+                                    <button
+                                        key={workflow.id}
+                                        onClick={() => onTriggerWorkflow(mr, workflow.id)}
+                                        disabled={isTriggering}
+                                        className={!isTriggering ? "hover-accent" : ""}
+                                        style={{
+                                            background: 'none', border: '1px solid var(--border-color)', borderRadius: '8px',
+                                            padding: '8px 14px', color: 'var(--text-secondary)', cursor: isTriggering ? 'not-allowed' : 'pointer',
+                                            display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease', fontSize: '12px', opacity: isTriggering ? 0.6 : 1
+                                        }}
+                                    >
+                                        {isTriggering ? (
+                                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ display: 'flex' }}>
+                                                <Clock size={14} />
+                                            </motion.div>
+                                        ) : (<Play size={14} />)}
+                                        <span>{isTriggering ? 'Dispatching...' : `Run ${workflow.name}`}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {onTriggerWorkflow && workflows.map(workflow => (
-                            <button
-                                key={workflow.id}
-                                onClick={() => onTriggerWorkflow(mr, workflow.id)}
-                                disabled={isTriggering}
-                                className={!isTriggering ? "hover-accent" : ""}
-                                style={{
-                                    background: 'none', border: '1px solid var(--border-color)', borderRadius: '8px',
-                                    padding: '6px 12px', color: 'var(--text-secondary)', cursor: isTriggering ? 'not-allowed' : 'pointer',
-                                    display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease', fontSize: '12px', opacity: isTriggering ? 0.6 : 1
-                                }}
-                            >
-                                {isTriggering ? (
-                                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ display: 'flex' }}>
-                                        <Clock size={14} />
-                                    </motion.div>
-                                ) : (<Play size={14} />)}
-                                <span>{isTriggering ? 'Dispatching...' : `Run ${workflow.name}`}</span>
-                            </button>
-                        ))}
+                    {/* Right column: Workflow Runs */}
+                    <div style={{ flex: '1', minWidth: 0 }}>
+                        <WorkflowRuns ciStatus={mr.ci_status} pollInterval={pollInterval} compact />
                     </div>
                 </div>
             </div>
 
-            <WorkflowRuns ciStatus={mr.ci_status} pollInterval={pollInterval} />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '18px' }}>Files Changed ({mr.files.length})</h3>
@@ -307,33 +361,72 @@ export const MrDetail: React.FC<MrDetailProps> = ({
             </div>
 
             <div className="glass" style={{ borderRadius: '12px', overflow: 'hidden' }}>
-                {mr.files.map((file: any, idx: number) => (
-                    <div
-                        key={idx}
-                        ref={idx === selectedIndex ? activeItemRef : null}
-                        className="sidebar-item"
-                        style={{
-                            margin: 0, borderRadius: 0, borderBottom: idx === mr.files.length - 1 ? 'none' : '1px solid var(--border-color)',
-                            padding: '12px 20px', cursor: 'pointer',
-                            background: idx === selectedIndex ? 'rgba(255,255,255,0.08)' : 'transparent',
-                            borderLeft: idx === selectedIndex ? '2px solid var(--accent-color)' : '2px solid transparent'
-                        }}
-                        onClick={() => onFileClick(idx)}
-                    >
-                        <div
-                            onClick={(e) => { e.stopPropagation(); onToggleFileViewed(mr.id, file.filename); }}
-                            style={{ display: 'flex', alignItems: 'center', padding: '4px' }}
-                        >
-                            {file.viewed ? <CheckCircle2 size={18} color="#4caf50" /> : <Circle size={18} color="#444" />}
+                {groupedFiles.sortedKeys.map((dirPath, dirIdx) => {
+                    const files = groupedFiles.groups[dirPath];
+                    const isCollapsed = collapsedDirs.has(dirPath);
+                    const isRootLevel = dirPath === '';
+                    const isLastDir = dirIdx === groupedFiles.sortedKeys.length - 1;
+
+                    return (
+                        <div key={dirPath || '__root__'}>
+                            {/* Directory header (not shown for root-level files) */}
+                            {!isRootLevel && (
+                                <div
+                                    onClick={() => toggleDir(dirPath)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '10px 20px',
+                                        cursor: 'pointer',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        borderBottom: '1px solid var(--border-color)'
+                                    }}
+                                    className="hover-accent"
+                                >
+                                    {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                                    <Folder size={14} color="var(--text-secondary)" />
+                                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{dirPath}</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
+                                        {files.length} file{files.length !== 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Files in this directory */}
+                            {!isCollapsed && files.map(({ file, index }, fileIdx) => (
+                                <div
+                                    key={index}
+                                    ref={index === selectedIndex ? activeItemRef : null}
+                                    className="sidebar-item"
+                                    style={{
+                                        margin: 0, borderRadius: 0,
+                                        borderBottom: (isLastDir && fileIdx === files.length - 1) ? 'none' : '1px solid var(--border-color)',
+                                        padding: '12px 20px',
+                                        paddingLeft: isRootLevel ? '20px' : '40px',
+                                        cursor: 'pointer',
+                                        background: index === selectedIndex ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                        borderLeft: index === selectedIndex ? '2px solid var(--accent-color)' : '2px solid transparent'
+                                    }}
+                                    onClick={() => onFileClick(index)}
+                                >
+                                    <div
+                                        onClick={(e) => { e.stopPropagation(); onToggleFileViewed(mr.id, file.filename); }}
+                                        style={{ display: 'flex', alignItems: 'center', padding: '4px' }}
+                                    >
+                                        {file.viewed ? <CheckCircle2 size={18} color="#4caf50" /> : <Circle size={18} color="#444" />}
+                                    </div>
+                                    <FileText size={16} color="var(--text-secondary)" />
+                                    <span style={{ flexGrow: 1 }}>{file.filename.split('/').pop()}</span>
+                                    <div style={{ display: 'flex', gap: '4px', fontSize: '12px' }}>
+                                        <span style={{ color: '#4caf50' }}>+{file.additions}</span>
+                                        <span style={{ color: '#f44336' }}>-{file.deletions}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        <FileText size={16} color="var(--text-secondary)" />
-                        <span style={{ flexGrow: 1 }}>{file.filename}</span>
-                        <div style={{ display: 'flex', gap: '4px', fontSize: '12px' }}>
-                            <span style={{ color: '#4caf50' }}>+{file.additions}</span>
-                            <span style={{ color: '#f44336' }}>-{file.deletions}</span>
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </motion.div>
     );

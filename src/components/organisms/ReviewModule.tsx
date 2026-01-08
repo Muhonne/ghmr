@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useRef, useCallback } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { DiffView, DiffModeEnum } from '@git-diff-view/react';
 import { DiffFile, generateDiffFile } from '@git-diff-view/file';
@@ -237,6 +237,63 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
         }
     };
 
+    // Ref for the diff container
+    const diffContainerRef = useRef<HTMLDivElement>(null);
+
+    // Click handler for line numbers - copies filename:line content
+    const handleLineNumberClick = useCallback((e: Event) => {
+        if (!currentFile) return;
+
+        const target = e.currentTarget as HTMLElement;
+        const lineNumber = target.textContent?.trim();
+
+        if (!lineNumber || !/^\d+$/.test(lineNumber)) return;
+
+        // Find the parent row and get the content from the new side
+        const row = target.closest('tr');
+        if (!row) return;
+
+        // Find the content cell - it's the sibling with class containing 'content' or the last cell
+        const contentCell = row.querySelector('.diff-line-new-content, .diff-line-content-new') as HTMLElement;
+        const lineContent = contentCell?.textContent || '';
+
+        const formattedContent = `${currentFile.filename}:${lineNumber} ${lineContent.trim()}`;
+
+        navigator.clipboard.writeText(formattedContent).then(() => {
+            // Visual feedback - briefly change background color
+            const originalBg = target.style.backgroundColor;
+            target.style.backgroundColor = '#2ea04366';
+            setTimeout(() => {
+                target.style.backgroundColor = originalBg;
+            }, 300);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
+    }, [currentFile]);
+
+    // Attach click handlers to new line number elements after render
+    useEffect(() => {
+        const container = diffContainerRef.current;
+        if (!container) return;
+
+        // Small delay to ensure the diff viewer has rendered
+        const timeoutId = setTimeout(() => {
+            const lineNumbers = container.querySelectorAll('.diff-line-new-num');
+            lineNumbers.forEach(el => {
+                el.addEventListener('click', handleLineNumberClick);
+                (el as HTMLElement).style.cursor = 'pointer';
+            });
+        }, 100);
+
+        return () => {
+            clearTimeout(timeoutId);
+            const lineNumbers = container.querySelectorAll('.diff-line-new-num');
+            lineNumbers.forEach(el => {
+                el.removeEventListener('click', handleLineNumberClick);
+            });
+        };
+    }, [diffFile, handleLineNumberClick]);
+
     return (
         <motion.div
             key="review"
@@ -369,6 +426,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                 </div>
                             ) : (
                                 <div
+                                    ref={diffContainerRef}
                                     className="diff-viewer"
                                     style={{
                                         background: '#0d1117',

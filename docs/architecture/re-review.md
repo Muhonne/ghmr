@@ -6,42 +6,73 @@
 
 **Feature Description:** Logic to handle the state of viewed files when new commits are pushed to a previously reviewed Pull Request.
 
-**Goal:** to ensure that users are immediately aware of which files have changed since their last review, while preserving "viewed" status for files that remain untouched.
+**Goal:** To ensure that users are immediately aware of which files have changed since their last review, while preserving "viewed" status for files that remain untouched.
 
-**Status:** ⚠️ Planned
+**Status:** ✅ Implemented
 
 **Note:** This is critical for the "incremental review" workflow.
 
 ## 2. System Architecture
 
-- **Local State Store**: Expands the local storage schema to track not just `boolean viewed`, but `string viewedAtSha` (the SHA of the PR HEAD when the file was marked viewed).
-- **Diff Comparison**: On PR reload/fetch, the system compares the current PR HEAD SHA against stored SHAs.
+- **Local State Store**: The storage schema tracks `viewedAtSha` (the SHA of the file blob when marked viewed) for each file.
+- **SHA Comparison**: On PR reload/fetch, the system compares current file SHAs against stored SHAs to determine if files have changed.
+- **Secure Storage**: Uses Tauri's secure store or localStorage for persistence across sessions.
 
 ## 3. Functional Requirements
+
+```gherkin
+Feature: Smart Re-review
+  As a code reviewer
+  I want my review progress to persist intelligently
+  So that I only need to re-review files that have actually changed
+
+  Scenario: Marking a File as Viewed
+    Given I am reviewing a Pull Request
+    When I mark a file as viewed
+    Then the system should record the file path and its current SHA
+    And the file should appear with a green checkmark
+
+  Scenario: File Unchanged After New Commits
+    Given I have previously marked "src/utils.ts" as viewed
+    And a new commit is pushed that does not modify "src/utils.ts"
+    When I refresh or reload the Pull Request
+    Then "src/utils.ts" should remain marked as viewed
+    And the progress percentage should be preserved
+
+  Scenario: File Changed After New Commits
+    Given I have previously marked "src/utils.ts" as viewed
+    And a new commit is pushed that modifies "src/utils.ts"
+    When I refresh or reload the Pull Request
+    Then "src/utils.ts" should be reset to unviewed
+    And the progress percentage should decrease accordingly
+
+  Scenario: New File Added
+    Given I am reviewing a Pull Request
+    And a new commit adds a new file "src/newFile.ts"
+    When I refresh or reload the Pull Request
+    Then "src/newFile.ts" should appear as unviewed
+    And the total file count should increase
+
+  Scenario: Progress Persists Across Sessions
+    Given I have marked several files as viewed
+    When I close and reopen the application
+    Then my review progress should be restored
+    And viewed files should still be marked appropriately
+```
+
+## 4. Technical Requirements
 
 ### State Tracking
 - When a user marks `file_A.ts` as **Viewed**, the system records:
   - `filePath`: `file_A.ts`
-  - `reviewedCommit`: `<current_pr_head_sha>`
+  - `reviewedSha`: `<current_file_blob_sha>`
 
-### Handling New Commits
-- When the app detects a new commit on the PR branch (Head SHA changes):
-  - **Iterate** through all files in the PR.
-  - **Check**: Has the file content changed between `reviewedCommit` and `currentHead`?
-    - *Scenario 1 (No change)*: If the file is identical to the version previously reviewed, keep status as **Viewed**.
-    - *Scenario 2 (Changed)*: If the file has been modified in the new commits, reset status to **Unviewed**.
-    - *Scenario 3 (New file)*: Treat as **Unviewed**.
-
-### User Interface
-- Visually highlight files that were "RESET" to distinguishing them from files that were never reviewed. (Optional but recommended).
-- Progress bar should update to reflect the drop in completion percentage.
-
-## 4. Technical Requirements
-- **Efficiency**: verification needs to be lightweight. We can likely rely on GitHub's API `sha` for the file blob.
+### SHA Comparison Logic
+- **Efficiency**: Verification uses GitHub's API `sha` for the file blob.
   - If `file.sha` (current) != `file.sha` (at time of view), then it changed.
   - This avoids needing to diff file contents manually.
-- **Persistence**: This state must survive app restarts.
-<<<<<<< HEAD
-<--- test if this works --->
-=======
->>>>>>> 8bb9a85 (add specs in docs)
+- **Implementation**: The `isFileViewed` function in `src/utils/reReview.ts` compares stored SHA with current SHA.
+
+### Persistence
+- State survives app restarts via Tauri's secure store or localStorage.
+- Storage key format: `viewed_${mrId}` containing a map of `{ [filename]: sha }`.

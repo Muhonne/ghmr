@@ -399,14 +399,13 @@ export default function App() {
 
 
             if (view === 'detail' && selectedMr) {
-                const files = selectedMr.files;
                 if (e.key === 'ArrowDown' || e.key === 'j') {
                     e.preventDefault();
-                    setCurrentFileIndex(p => Math.min(files.length - 1, p + 1));
+                    setCurrentFileIndex(p => getNextFileIndex(p, visualFileOrder));
                 }
                 if (e.key === 'ArrowUp' || e.key === 'k') {
                     e.preventDefault();
-                    setCurrentFileIndex(p => Math.max(0, p - 1));
+                    setCurrentFileIndex(p => getPrevFileIndex(p, visualFileOrder));
                 }
                 if (e.key === 'Enter') {
                     e.preventDefault();

@@ -68,4 +68,9 @@ mv "$TEMP_NOTES" RELEASE_NOTES.md
 echo "Running release build..."
 npm run release:mac
 
-echo "Release $VERSION completed successfully."
+echo "Committing release changes..."
+git add package.json package-lock.json src-tauri/tauri.conf.json RELEASE_NOTES.md
+git commit -m "v$VERSION"
+
+echo "Release v$VERSION completed successfully."
+echo "Don't forget to push: git push"
