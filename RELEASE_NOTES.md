@@ -1,3 +1,9 @@
+# 0.3.3
+
+- chore: cleanup unused dependencies and improve release script
+- feat: improve UI/UX with bouncing icon and grouped files
+- show commit count + commit details on hover
+
 # 0.3.2
 feat: add review progress stats
 - Add ReviewStats component showing GitHub-style line counts
