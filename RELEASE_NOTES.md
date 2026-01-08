@@ -1,3 +1,7 @@
+# 0.3.5
+
+- fix left/right file scrolling
+
 # 0.3.4
 
 - fix: fetch all PR files using pagination
