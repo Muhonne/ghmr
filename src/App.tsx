@@ -9,6 +9,7 @@ import { ReviewModule } from './components/organisms/ReviewModule'
 import { Settings } from './components/organisms/Settings'
 import { isFileViewed } from './utils/reReview'
 import { secureStorage } from './utils/secureStorage'
+import { getVisualFileOrder, getNextFileIndex, getPrevFileIndex } from './utils/fileOrder'
 
 export default function App() {
     const [token, setToken] = useState<string>('')
@@ -271,6 +272,12 @@ export default function App() {
         [mrs, selectedMrId]
     )
 
+    // Compute visual file order for navigation (matches sidebar grouping)
+    const visualFileOrder = useMemo(() =>
+        selectedMr ? getVisualFileOrder(selectedMr.files) : [],
+        [selectedMr]
+    )
+
     const handleUpdateMr = useCallback((updatedMr: MergeRequest) => {
         setMrs(prev => prev.map(m => m.id === updatedMr.id ? updatedMr : m));
     }, []);
@@ -412,11 +419,11 @@ export default function App() {
 
                 if (e.key === 'ArrowRight' || e.key === 'j') {
                     e.preventDefault();
-                    setCurrentFileIndex(p => Math.min(files.length - 1, p + 1));
+                    setCurrentFileIndex(p => getNextFileIndex(p, visualFileOrder));
                 }
                 if (e.key === 'ArrowLeft' || e.key === 'k') {
                     e.preventDefault();
-                    setCurrentFileIndex(p => Math.max(0, p - 1));
+                    setCurrentFileIndex(p => getPrevFileIndex(p, visualFileOrder));
                 }
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
@@ -468,23 +475,23 @@ export default function App() {
                     const file = files[currentFileIndex]
                     if (file) {
                         if (!file.viewed) toggleFileViewed(selectedMr.id, file.filename)
-                        if (currentFileIndex < files.length - 1) setCurrentFileIndex(p => p + 1)
+                        const nextIndex = getNextFileIndex(currentFileIndex, visualFileOrder);
+                        if (nextIndex !== currentFileIndex) setCurrentFileIndex(nextIndex);
                     }
                 }
                 if (e.key === 'Backspace') {
                     e.preventDefault();
                     const file = files[currentFileIndex]
                     if (file.viewed) toggleFileViewed(selectedMr.id, file.filename)
-                    if (currentFileIndex > 0) {
-                        setCurrentFileIndex(p => p - 1)
-                    }
+                    const prevIndex = getPrevFileIndex(currentFileIndex, visualFileOrder);
+                    if (prevIndex !== currentFileIndex) setCurrentFileIndex(prevIndex);
                 }
 
             }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs, fontSize, mrs, currentMrIndex])
+    }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs, fontSize, mrs, currentMrIndex, visualFileOrder])
 
     return (
         <MainLayout
