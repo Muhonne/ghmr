@@ -1,6 +1,7 @@
 import React from 'react';
-import { ShieldCheck, Keyboard } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { MrListItem } from '../molecules/MrListItem';
+import { BouncingIcon } from '../molecules/BouncingIcon';
 import { MergeRequest, View } from '../../types';
 
 interface MrListProps {
@@ -13,6 +14,7 @@ interface MrListProps {
     setView: (view: View) => void;
     selectedIndex: number;
 }
+
 
 export const MrList: React.FC<MrListProps> = ({
     mrs,
@@ -57,20 +59,26 @@ export const MrList: React.FC<MrListProps> = ({
             {token && (
                 <div>
                     {!loading && mrs.length === 0 ? (
-                        <div className="glass" style={{ padding: '40px', borderRadius: '16px', textAlign: 'center' }}>
-                            <div style={{ opacity: 0.5, marginBottom: '20px' }}>
-                                <Keyboard size={48} />
+                        <div className="glass" style={{ padding: '0', borderRadius: '16px', textAlign: 'center', position: 'relative', height: '300px', overflow: 'hidden' }}>
+                            <BouncingIcon />
+                            <div style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                pointerEvents: 'none'
+                            }}>
+                                <h3>All Caught Up!</h3>
+                                <p style={{ color: 'var(--text-secondary)', marginTop: '8px', marginBottom: '20px' }}>
+                                    No open merge requests found. Time to grab a coffee?
+                                </p>
+                                <button
+                                    style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 16px', pointerEvents: 'auto' }}
+                                    onClick={onRefresh}
+                                >
+                                    Refresh
+                                </button>
                             </div>
-                            <h3>All Caught Up!</h3>
-                            <p style={{ color: 'var(--text-secondary)', marginTop: '8px', marginBottom: '20px' }}>
-                                No open merge requests found. Time to grab a coffee?
-                            </p>
-                            <button
-                                style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 16px' }}
-                                onClick={() => setView('list')}
-                            >
-                                Refresh
-                            </button>
                         </div>
                     ) : (
                         <div style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
