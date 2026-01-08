@@ -1,3 +1,7 @@
+# 0.3.4
+
+- fix: fetch all PR files using pagination
+
 # 0.3.3
 
 - chore: cleanup unused dependencies and improve release script
