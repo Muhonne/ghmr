@@ -21,6 +21,8 @@ interface MrDetailProps {
     onUpdateWorkflows: (workflows: Workflow[]) => void;
     pollInterval: number;
     selectedIndex?: number;
+    onRefresh?: () => void;
+    loading?: boolean;
 }
 
 export const MrDetail: React.FC<MrDetailProps> = ({
@@ -36,6 +38,8 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     onUpdateWorkflows,
     pollInterval,
     selectedIndex,
+    onRefresh,
+    loading,
 }) => {
     const mrRef = useRef(mr);
     const workflowsFetchedRef = useRef<string | null>(null);
@@ -213,7 +217,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
             style={{ padding: '64px 32px 32px 32px', maxWidth: '1000px', margin: '0 auto', width: '100%' }}
         >
             <div className="glass" style={{ padding: '24px', borderRadius: '16px', marginBottom: '24px' }}>
-                {/* Title with GitHub link */}
+                {/* Title with GitHub link and refresh */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '24px', margin: 0 }}>{mr.title}</h2>
                     <ExternalLink
@@ -222,6 +226,18 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                         style={{ cursor: 'pointer', flexShrink: 0 }}
                         onClick={() => openUrl(`https://github.com/${mr.repository}/pull/${mr.number}`)}
                     />
+                    <div style={{ marginLeft: 'auto' }}>
+                        {onRefresh && (
+                            <button
+                                className={`sidebar-item ${loading ? 'loading' : ''}`}
+                                style={{ padding: '6px 16px', margin: 0, background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}
+                                onClick={onRefresh}
+                                disabled={loading}
+                            >
+                                {loading ? 'Refreshing...' : 'Refresh'}
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '24px' }}>
@@ -245,7 +261,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                     onMouseEnter={() => {
                                         if (commitsRef.current) {
                                             const rect = commitsRef.current.getBoundingClientRect();
-                                            setTooltipPos({ top: rect.bottom + 4, left: rect.left });
+                                            setTooltipPos({ top: rect.bottom - 2, left: rect.left });
                                         }
                                         setShowCommits(true);
                                     }}
@@ -300,7 +316,10 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                                 }}
                                             >
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                                    <code style={{ color: 'var(--accent-color)', fontSize: '11px' }}>{commit.sha.slice(0, 7)}</code>
+                                                    <code
+                                                        style={{ color: 'var(--accent-color)', fontSize: '11px', cursor: 'pointer' }}
+                                                        onClick={() => openUrl(`https://github.com/${mr.repository}/commit/${commit.sha}`)}
+                                                    >{commit.sha.slice(0, 7)}</code>
                                                     <span style={{ color: 'var(--text-secondary)' }}>{commit.author}</span>
                                                     <span style={{ marginLeft: 'auto', color: 'var(--text-secondary)', opacity: 0.7, fontSize: '11px' }}>
                                                         {formatRelativeTime(commit.date)}
@@ -416,8 +435,17 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                     >
                                         {file.viewed ? <CheckCircle2 size={18} color="#4caf50" /> : <Circle size={18} color="#444" />}
                                     </div>
-                                    <FileText size={16} color="var(--text-secondary)" />
-                                    <span style={{ flexGrow: 1 }}>{file.filename.split('/').pop()}</span>
+                                    <FileText size={16} color={index === selectedIndex ? '#f9a8d4' : 'var(--text-secondary)'} />
+                                    <span style={{
+                                        flexGrow: 1,
+                                        ...(index === selectedIndex ? {
+                                            background: 'linear-gradient(90deg, #f9a8d4, #a78bfa, #60a5fa, #34d399)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            backgroundClip: 'text',
+                                            fontWeight: 500
+                                        } : {})
+                                    }}>{file.filename.split('/').pop()}</span>
                                     <div style={{ display: 'flex', gap: '4px', fontSize: '12px' }}>
                                         <span style={{ color: '#4caf50' }}>+{file.additions}</span>
                                         <span style={{ color: '#f44336' }}>-{file.deletions}</span>

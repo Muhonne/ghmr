@@ -178,35 +178,31 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
     const diffFile = useMemo(() => {
         if (!currentFile) return null;
 
+        // If there's no content to diff, return null
+        if (!oldValue && !newValue) return null;
+
         const fileName = currentFile.filename;
         const lang = getFileLanguage(fileName);
 
-        // IMPORTANT: We use the DiffFile constructor. 
-        // We pass the content we derived. 
-        // We pass empty array for hunks if we want it to compute diff? 
-        // Or we pass the patch hunks?
-        // If we pass hunks, it might use them. 
-        // Let's try passing the content and letting it handle it.
-        // The constructor signature is:
-        // constructor(oldFileName, oldContent, newFileName, newContent, hunks, oldLang, newLang, originalNewFileName)
-        // But checking source, it might be:
-        // constructor(oldFile, oldContent, newFile, newContent, hunks, oldFileLang, newFileLang)
+        try {
+            const file = generateDiffFile(
+                fileName,
+                oldValue,
+                fileName,
+                newValue,
+                lang,
+                lang
+            );
 
-        // Let's try to construct it.
-        const file = generateDiffFile(
-            fileName,
-            oldValue,
-            fileName,
-            newValue,
-            lang,
-            lang
-        );
+            // Initialize theme and build lines
+            file.init();
+            file.buildSplitDiffLines();
 
-        // Initialize theme and build lines
-        file.init();
-        file.buildSplitDiffLines();
-
-        return file;
+            return file;
+        } catch (error) {
+            console.error('Failed to generate diff file:', error);
+            return null;
+        }
     }, [currentFile, oldValue, newValue]);
 
     const [isCopying, setIsCopying] = useState(false);
@@ -335,7 +331,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <ReviewStats files={mr.files} compact />
                         </div>
-                        <code style={{ color: 'var(--text-secondary)', fontSize: '13px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentFile?.filename}</code>
+                        <code style={{ color: 'white', fontSize: '16px', fontWeight: 500, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentFile?.filename}</code>
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                             <button
                                 onClick={handleCopyRaw}

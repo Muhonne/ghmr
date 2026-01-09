@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     List,
     Settings,
@@ -6,6 +5,7 @@ import {
     PanelLeftClose
 } from 'lucide-react';
 import { SidebarItem } from '../molecules/SidebarItem';
+import { KeyboardShortcutsPopover } from '../molecules/KeyboardShortcuts';
 import { User, View } from '../../types';
 
 import pkg from '../../../package.json';
@@ -74,6 +74,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     isMinified={isMinified}
                     onClick={() => setView('settings')}
                 />
+
+                <KeyboardShortcutsPopover isMinified={isMinified} />
             </nav>
 
             <div style={{ padding: '12px 0', borderTop: '1px solid var(--border-color)' }}>

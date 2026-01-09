@@ -10,7 +10,7 @@ import { ReviewCompleteModal } from './components/molecules/ReviewCompleteModal'
 import { Settings } from './components/organisms/Settings'
 import { isFileViewed } from './utils/reReview'
 import { secureStorage } from './utils/secureStorage'
-import { getVisualFileOrder, getNextFileIndex, getPrevFileIndex } from './utils/fileOrder'
+import { getVisualFileOrder, getNextFileIndex, getPrevFileIndex, getNextUnviewedFileIndex } from './utils/fileOrder'
 
 export default function App() {
     const [token, setToken] = useState<string>('')
@@ -371,10 +371,10 @@ export default function App() {
                 return;
             }
 
-            // Global shortcut: Cmd+R to refresh (only in list view) - now debounced
+            // Global shortcut: Cmd+R to refresh (only in list view, blocked while loading)
             if (view === 'list' && (e.metaKey || e.ctrlKey) && e.key === 'r') {
                 e.preventDefault();
-                debouncedFetchMrs();
+                if (!loading) fetchMrs();
                 return;
             }
 
@@ -404,6 +404,12 @@ export default function App() {
 
 
             if (view === 'detail' && selectedMr) {
+                // Cmd+R to refresh (same as list view)
+                if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+                    e.preventDefault();
+                    if (!loading) fetchMrs();
+                    return;
+                }
                 if (e.key === 'ArrowDown' || e.key === 'j') {
                     e.preventDefault();
                     setCurrentFileIndex(p => getNextFileIndex(p, visualFileOrder));
@@ -412,6 +418,7 @@ export default function App() {
                     e.preventDefault();
                     setCurrentFileIndex(p => getPrevFileIndex(p, visualFileOrder));
                 }
+                // PageUp/PageDown: allow native scroll behavior (don't preventDefault)
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     setView('review');
@@ -477,11 +484,12 @@ export default function App() {
                             f.filename === file.filename ? true : f.viewed
                         );
 
-                        const nextIndex = getNextFileIndex(currentFileIndex, visualFileOrder);
-                        const isLastFile = nextIndex === currentFileIndex;
+                        // Find next unviewed file (skips already reviewed files)
+                        const nextIndex = getNextUnviewedFileIndex(currentFileIndex, visualFileOrder, files);
+                        const noMoreUnviewed = nextIndex === currentFileIndex;
 
-                        // Show celebration if we're on last file OR all files are now viewed
-                        if (isLastFile || willAllBeViewed) {
+                        // Show celebration if no more unviewed files
+                        if (noMoreUnviewed || willAllBeViewed) {
                             setShowReviewComplete(true);
                         } else {
                             setCurrentFileIndex(nextIndex);
@@ -567,6 +575,8 @@ export default function App() {
                         onUpdateWorkflows={setAvailableWorkflows}
                         pollInterval={pollInterval}
                         selectedIndex={currentFileIndex}
+                        onRefresh={fetchMrs}
+                        loading={loading}
                     />
                 )}
                 {view === 'review' && selectedMr && (
