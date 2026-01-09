@@ -6,6 +6,7 @@ import { MainLayout } from './components/templates/MainLayout'
 import { MrList } from './components/organisms/MrList'
 import { MrDetail } from './components/organisms/MrDetail'
 import { ReviewModule } from './components/organisms/ReviewModule'
+import { ReviewCompleteModal } from './components/molecules/ReviewCompleteModal'
 import { Settings } from './components/organisms/Settings'
 import { isFileViewed } from './utils/reReview'
 import { secureStorage } from './utils/secureStorage'
@@ -28,8 +29,12 @@ export default function App() {
     const [isSidebarMinified, setIsSidebarMinified] = useState(true)
     const [isTriggering, setIsTriggering] = useState(false)
     const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
+    const [showReviewComplete, setShowReviewComplete] = useState(false)
     const reviewScrollRef = useRef<HTMLDivElement | null>(null)
     const sidebarWidthRef = useRef(0)
+    // Refs for continuous scroll
+    const scrollDirectionRef = useRef<number>(0) // -1 = up, 0 = stopped, 1 = down
+    const scrollAnimationRef = useRef<number | null>(null)
 
 
     useEffect(() => {
@@ -424,49 +429,41 @@ export default function App() {
                     e.preventDefault();
                     setCurrentFileIndex(p => getPrevFileIndex(p, visualFileOrder));
                 }
-                if (e.key === 'ArrowDown') {
+                if (e.key === 'ArrowDown' && !e.repeat) {
                     e.preventDefault();
-                    const scrollElement = reviewScrollRef.current;
-                    if (scrollElement) {
-                        const start = scrollElement.scrollTop;
-                        const target = start + 100;
-                        const duration = 200;
-                        const startTime = performance.now();
-
-                        const animateScroll = (currentTime: number) => {
-                            const elapsed = currentTime - startTime;
-                            const progress = Math.min(elapsed / duration, 1);
-                            const easeProgress = progress * (2 - progress); // ease out
-                            scrollElement.scrollTop = start + (target - start) * easeProgress;
-
-                            if (progress < 1) {
-                                requestAnimationFrame(animateScroll);
+                    scrollDirectionRef.current = 1;
+                    if (!scrollAnimationRef.current) {
+                        const scrollLoop = () => {
+                            const el = reviewScrollRef.current;
+                            if (el && scrollDirectionRef.current !== 0) {
+                                el.scrollTop += scrollDirectionRef.current * 12;
+                                scrollAnimationRef.current = requestAnimationFrame(scrollLoop);
+                            } else {
+                                scrollAnimationRef.current = null;
                             }
                         };
-                        requestAnimationFrame(animateScroll);
+                        scrollAnimationRef.current = requestAnimationFrame(scrollLoop);
                     }
+                } else if (e.key === 'ArrowDown' && e.repeat) {
+                    e.preventDefault(); // Just prevent default, loop handles it
                 }
-                if (e.key === 'ArrowUp') {
+                if (e.key === 'ArrowUp' && !e.repeat) {
                     e.preventDefault();
-                    const scrollElement = reviewScrollRef.current;
-                    if (scrollElement) {
-                        const start = scrollElement.scrollTop;
-                        const target = Math.max(0, start - 100);
-                        const duration = 200;
-                        const startTime = performance.now();
-
-                        const animateScroll = (currentTime: number) => {
-                            const elapsed = currentTime - startTime;
-                            const progress = Math.min(elapsed / duration, 1);
-                            const easeProgress = progress * (2 - progress); // ease out
-                            scrollElement.scrollTop = start + (target - start) * easeProgress;
-
-                            if (progress < 1) {
-                                requestAnimationFrame(animateScroll);
+                    scrollDirectionRef.current = -1;
+                    if (!scrollAnimationRef.current) {
+                        const scrollLoop = () => {
+                            const el = reviewScrollRef.current;
+                            if (el && scrollDirectionRef.current !== 0) {
+                                el.scrollTop += scrollDirectionRef.current * 12;
+                                scrollAnimationRef.current = requestAnimationFrame(scrollLoop);
+                            } else {
+                                scrollAnimationRef.current = null;
                             }
                         };
-                        requestAnimationFrame(animateScroll);
+                        scrollAnimationRef.current = requestAnimationFrame(scrollLoop);
                     }
+                } else if (e.key === 'ArrowUp' && e.repeat) {
+                    e.preventDefault(); // Just prevent default, loop handles it
                 }
 
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -474,8 +471,21 @@ export default function App() {
                     const file = files[currentFileIndex]
                     if (file) {
                         if (!file.viewed) toggleFileViewed(selectedMr.id, file.filename)
+
+                        // Check if all files will be viewed after this action
+                        const willAllBeViewed = files.every(f =>
+                            f.filename === file.filename ? true : f.viewed
+                        );
+
                         const nextIndex = getNextFileIndex(currentFileIndex, visualFileOrder);
-                        if (nextIndex !== currentFileIndex) setCurrentFileIndex(nextIndex);
+                        const isLastFile = nextIndex === currentFileIndex;
+
+                        // Show celebration if we're on last file OR all files are now viewed
+                        if (isLastFile || willAllBeViewed) {
+                            setShowReviewComplete(true);
+                        } else {
+                            setCurrentFileIndex(nextIndex);
+                        }
                     }
                 }
                 if (e.key === 'Backspace') {
@@ -488,8 +498,24 @@ export default function App() {
 
             }
         }
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (view === 'review' && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                scrollDirectionRef.current = 0;
+            }
+        };
+
         window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
+        window.addEventListener('keyup', handleKeyUp)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+            window.removeEventListener('keyup', handleKeyUp)
+            // Clean up any running animation
+            if (scrollAnimationRef.current) {
+                cancelAnimationFrame(scrollAnimationRef.current);
+                scrollAnimationRef.current = null;
+            }
+        }
     }, [view, selectedMr, currentFileIndex, toggleFileViewed, debouncedFetchMrs, fontSize, mrs, currentMrIndex, visualFileOrder])
 
     return (
@@ -567,6 +593,11 @@ export default function App() {
                     />
                 )}
             </AnimatePresence>
+
+            <ReviewCompleteModal
+                isOpen={showReviewComplete}
+                onClose={() => setShowReviewComplete(false)}
+            />
         </MainLayout>
     )
 }
