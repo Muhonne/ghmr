@@ -1,3 +1,7 @@
+# 0.4.1
+
+- Add review complete celebration modal and smooth scroll improvements
+
 # 0.4.0
 
 - refactor: redesign MrDetail layout with side-by-side Branch and Workflow Runs
