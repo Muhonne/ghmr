@@ -1,3 +1,7 @@
+# 0.4.2
+
+- feat: add Help section with keyboard shortcuts, improve UX
+
 # 0.4.1
 
 - Add review complete celebration modal and smooth scroll improvements
