@@ -1,3 +1,7 @@
+# 0.4.3
+
+- Fix bouncing icon gap and add mouse back button navigation
+
 # 0.4.2
 
 - feat: add Help section with keyboard shortcuts, improve UX
