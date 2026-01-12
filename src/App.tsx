@@ -513,11 +513,22 @@ export default function App() {
             }
         };
 
+        // Mouse back button handler (button 3 or 4 depending on browser)
+        const handleMouseUp = (e: MouseEvent) => {
+            // Mouse button 3 = back button on most mice, button 4 on some
+            if ((e.button === 3) && view !== 'list') {
+                e.preventDefault();
+                setView(view === 'review' ? 'detail' : 'list');
+            }
+        };
+
         window.addEventListener('keydown', handleKeyDown)
         window.addEventListener('keyup', handleKeyUp)
+        window.addEventListener('mouseup', handleMouseUp)
         return () => {
             window.removeEventListener('keydown', handleKeyDown)
             window.removeEventListener('keyup', handleKeyUp)
+            window.removeEventListener('mouseup', handleMouseUp)
             // Clean up any running animation
             if (scrollAnimationRef.current) {
                 cancelAnimationFrame(scrollAnimationRef.current);

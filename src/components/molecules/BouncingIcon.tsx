@@ -67,10 +67,10 @@ export const BouncingIcon: React.FC<BouncingIconProps> = ({
             ref={containerRef}
             style={{
                 position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0
+                top: -8,
+                left: -8,
+                right: -8,
+                bottom: -8
             }}
         >
             <img
