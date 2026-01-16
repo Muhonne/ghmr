@@ -268,7 +268,16 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                     onMouseLeave={() => setShowCommits(false)}
                                 >
                                     <GitCommit size={14} />
-                                    <span>{mr.commits.length} commit{mr.commits.length !== 1 ? 's' : ''}</span>
+                                    <span>
+                                        {mr.commits.length} commit{mr.commits.length !== 1 ? 's' : ''}
+                                        <span style={{ margin: '0 6px', opacity: 0.5 }}>•</span>
+                                        last pushed {new Date(mr.commits[mr.commits.length - 1].date).toLocaleString(undefined, {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </span>
                                 </div>
                             )}
                             {showCommits && mr.commits && mr.commits.length > 0 && ReactDOM.createPortal(
@@ -292,19 +301,14 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                     onMouseLeave={() => setShowCommits(false)}
                                 >
                                     {[...mr.commits].reverse().map((commit, idx) => {
-                                        const formatRelativeTime = (dateStr: string) => {
+                                        const formatCommitDate = (dateStr: string) => {
                                             if (!dateStr) return '';
-                                            const date = new Date(dateStr);
-                                            const now = new Date();
-                                            const diffMs = now.getTime() - date.getTime();
-                                            const diffMins = Math.floor(diffMs / 60000);
-                                            const diffHours = Math.floor(diffMs / 3600000);
-                                            const diffDays = Math.floor(diffMs / 86400000);
-                                            if (diffMins < 1) return 'just now';
-                                            if (diffMins < 60) return `${diffMins}m ago`;
-                                            if (diffHours < 24) return `${diffHours}h ago`;
-                                            if (diffDays < 7) return `${diffDays}d ago`;
-                                            return date.toLocaleDateString();
+                                            return new Date(dateStr).toLocaleString(undefined, {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            });
                                         };
                                         return (
                                             <div
@@ -322,7 +326,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                                     >{commit.sha.slice(0, 7)}</code>
                                                     <span style={{ color: 'var(--text-secondary)' }}>{commit.author}</span>
                                                     <span style={{ marginLeft: 'auto', color: 'var(--text-secondary)', opacity: 0.7, fontSize: '11px' }}>
-                                                        {formatRelativeTime(commit.date)}
+                                                        {formatCommitDate(commit.date)}
                                                     </span>
                                                 </div>
                                                 <div style={{ color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
