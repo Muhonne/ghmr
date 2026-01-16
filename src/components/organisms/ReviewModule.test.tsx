@@ -68,7 +68,8 @@ describe('ReviewModule', () => {
             removedGutterBackground: '#000',
             wordAddedBackground: '#000',
             wordRemovedBackground: '#000',
-        }
+        },
+        onToggleFilesViewed: vi.fn()
     };
 
     beforeEach(() => {

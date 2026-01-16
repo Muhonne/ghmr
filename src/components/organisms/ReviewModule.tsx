@@ -19,7 +19,7 @@ interface ReviewModuleProps {
     startResizing: (e: React.MouseEvent) => void;
     scrollRef: React.RefObject<HTMLDivElement | null>;
     octokit: any;
-
+    onToggleFilesViewed: (mrId: number, filenames: string[], forceStatus?: boolean) => void;
 }
 
 export const ReviewModule: React.FC<ReviewModuleProps> = ({
@@ -30,7 +30,8 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
     isResizing,
     startResizing,
     scrollRef,
-    octokit
+    octokit,
+    onToggleFilesViewed
 }) => {
     const [extraContent, setExtraContent] = useState<string | null>(null);
     const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -311,6 +312,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                     currentIndex={currentIndex}
                     onSelectFile={setCurrentIndex}
                     width={fileListWidth}
+                    onToggleFilesViewed={onToggleFilesViewed}
                 />
 
                 {/* Resizer Handle */}

@@ -296,27 +296,53 @@ export default function App() {
     }, [])
 
     const toggleFileViewed = async (mrId: number, filename: string) => {
+        await toggleFilesViewed(mrId, [filename]);
+    }
+
+    const toggleFilesViewed = async (mrId: number, filenames: string[], forceStatus?: boolean) => {
         setMrs(prev => prev.map(m => {
             if (m.id !== mrId) return m
             return {
                 ...m,
-                files: m.files.map(f => f.filename === filename ? { ...f, viewed: !f.viewed } : f)
+                files: m.files.map(f => {
+                    if (filenames.includes(f.filename)) {
+                        return { ...f, viewed: forceStatus !== undefined ? forceStatus : !f.viewed }
+                    }
+                    return f
+                })
             }
         }))
 
         const currentMr = mrs.find(m => m.id === mrId)
         if (currentMr) {
-            const viewedMap: Record<string, string> = {}
-            currentMr.files.forEach(f => {
-                const isTarget = f.filename === filename;
-                const willBeViewed = isTarget ? !f.viewed : f.viewed;
+            // We need to look at the *updated* state, but since state updates are async/batched,
+            // we calculate the new state locally for persistence.
+            // Actually, we can just update the storage based on the intent.
+            // We need the SHA for each file to key the storage.
 
-                if (willBeViewed) {
-                    viewedMap[f.filename] = f.sha;
+            const viewedMap: Record<string, string> = {}
+
+            // First load existing valid viewed state (if we want to be safe, but setViewedFiles merges? 
+            // secureStorage.setViewedFiles documentation isn't visible but based on usage it seems to set the map for the MR)
+            // Wait, secureStorage.getViewedFiles returns the map. 
+            // If we want to update it, we should likely get current, update, set.
+
+            const currentViewedMap = await secureStorage.getViewedFiles(mrId);
+            const newViewedMap = { ...currentViewedMap };
+
+            currentMr.files.forEach(f => {
+                const isTarget = filenames.includes(f.filename);
+                if (isTarget) {
+                    const newStatus = forceStatus !== undefined ? forceStatus : !f.viewed;
+                    if (newStatus) {
+                        newViewedMap[f.filename] = f.sha;
+                    } else {
+                        delete newViewedMap[f.filename];
+                    }
                 }
             })
 
-            await secureStorage.setViewedFiles(mrId, viewedMap)
+            await secureStorage.setViewedFiles(mrId, newViewedMap)
         }
     }
 
@@ -588,6 +614,7 @@ export default function App() {
                         selectedIndex={currentFileIndex}
                         onRefresh={fetchMrs}
                         loading={loading}
+                        onToggleFilesViewed={toggleFilesViewed}
                     />
                 )}
                 {view === 'review' && selectedMr && (
@@ -600,6 +627,7 @@ export default function App() {
                         startResizing={startResizing}
                         scrollRef={reviewScrollRef}
                         octokit={octokit}
+                        onToggleFilesViewed={toggleFilesViewed}
                     />
                 )}
                 {view === 'settings' && (

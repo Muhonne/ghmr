@@ -23,6 +23,7 @@ interface MrDetailProps {
     selectedIndex?: number;
     onRefresh?: () => void;
     loading?: boolean;
+    onToggleFilesViewed: (mrId: number, filenames: string[], forceStatus?: boolean) => void;
 }
 
 export const MrDetail: React.FC<MrDetailProps> = ({
@@ -40,6 +41,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     selectedIndex,
     onRefresh,
     loading,
+    onToggleFilesViewed
 }) => {
     const mrRef = useRef(mr);
     const workflowsFetchedRef = useRef<string | null>(null);
@@ -390,12 +392,14 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                     const isRootLevel = dirPath === '';
                     const isLastDir = dirIdx === groupedFiles.sortedKeys.length - 1;
 
+                    const allViewed = files.every(({ file }) => file.viewed);
+                    const someViewed = files.some(({ file }) => file.viewed);
+
                     return (
                         <div key={dirPath || '__root__'}>
                             {/* Directory header (not shown for root-level files) */}
                             {!isRootLevel && (
                                 <div
-                                    onClick={() => toggleDir(dirPath)}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -407,12 +411,31 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                     }}
                                     className="hover-accent"
                                 >
-                                    {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                                    <Folder size={14} color="var(--text-secondary)" />
-                                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{dirPath}</span>
-                                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
-                                        {files.length} file{files.length !== 1 ? 's' : ''}
-                                    </span>
+                                    <div
+                                        onClick={() => onToggleFilesViewed(mr.id, files.map(f => f.file.filename), !allViewed)}
+                                        style={{ display: 'flex', alignItems: 'center', marginRight: '4px', zIndex: 10 }}
+                                        title={allViewed ? "Mark folder as unviewed" : "Mark folder as viewed"}
+                                    >
+                                        {allViewed ? (
+                                            <CheckCircle2 size={16} color="#4caf50" />
+                                        ) : someViewed ? (
+                                            <Circle size={16} color="#4caf50" fill='#4caf50' fillOpacity={0.2} />
+                                        ) : (
+                                            <Circle size={16} color="#444" />
+                                        )}
+                                    </div>
+
+                                    <div
+                                        onClick={() => toggleDir(dirPath)}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 1 }}
+                                    >
+                                        {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                                        <Folder size={14} color="var(--text-secondary)" />
+                                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{dirPath}</span>
+                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
+                                            {files.length} file{files.length !== 1 ? 's' : ''}
+                                        </span>
+                                    </div>
                                 </div>
                             )}
 

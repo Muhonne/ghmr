@@ -7,6 +7,7 @@ interface ReviewSidebarProps {
     currentIndex: number;
     onSelectFile: (index: number) => void;
     width: number;
+    onToggleFilesViewed: (mrId: number, filenames: string[], forceStatus?: boolean) => void;
 }
 
 interface FileWithIndex {
@@ -22,10 +23,12 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
     mr,
     currentIndex,
     onSelectFile,
-    width
+    width,
+    onToggleFilesViewed
 }) => {
     const activeFileRef = useRef<HTMLDivElement>(null);
     const [collapsedDirs, setCollapsedDirs] = useState<Set<string>>(new Set());
+    const [filterText, setFilterText] = useState('');
 
     useEffect(() => {
         if (activeFileRef.current) {
@@ -40,7 +43,11 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
     const groupedFiles = useMemo(() => {
         const groups: GroupedFiles = {};
 
-        mr.files.forEach((file, index) => {
+        // Filter files first
+        const filteredFiles = mr.files.map((file, index) => ({ file, index }))
+            .filter(({ file }) => file.filename.toLowerCase().includes(filterText.toLowerCase()));
+
+        filteredFiles.forEach(({ file, index }) => {
             const parts = file.filename.split('/');
             const dirPath = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
 
@@ -58,7 +65,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
         });
 
         return { groups, sortedKeys };
-    }, [mr.files]);
+    }, [mr.files, filterText]);
 
     const toggleDir = (dir: string) => {
         setCollapsedDirs(prev => {
@@ -94,16 +101,44 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
             overflow: 'hidden',
             width: 'var(--file-list-width)',
             flexShrink: 0,
-            paddingTop: '60px',
+            paddingTop: '0', // Changed from 60px to accommodate sticky header
             borderRight: '1px solid var(--border-color)',
             display: 'flex',
             flexDirection: 'column'
         }}>
+            {/* Filter Input */}
+            <div style={{
+                padding: '12px',
+                borderBottom: '1px solid var(--border-color)',
+                background: 'var(--bg-app)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 10
+            }}>
+                <input
+                    type="text"
+                    placeholder="Filter files..."
+                    value={filterText}
+                    onChange={(e) => setFilterText(e.target.value)}
+                    style={{
+                        width: '100%',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        color: 'var(--text-primary)',
+                        fontSize: '13px',
+                        outline: 'none'
+                    }}
+                />
+            </div>
+
             <div style={{
                 height: '100%',
                 overflowY: 'auto',
                 direction: 'rtl',
-                scrollbarGutter: 'stable'
+                scrollbarGutter: 'stable',
+                paddingTop: '10px'
             }}>
                 <div style={{ direction: 'ltr' }}>
                     {groupedFiles.sortedKeys.map(dirPath => {
@@ -111,11 +146,14 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
                         const isCollapsed = collapsedDirs.has(dirPath);
                         const isRootLevel = dirPath === '';
 
+                        // Check status of files in this folder
+                        const allViewed = files.every(({ file }) => file.viewed);
+                        const someViewed = files.some(({ file }) => file.viewed);
+
                         return (
                             <div key={dirPath || '__root__'}>
                                 {!isRootLevel && (
                                     <div
-                                        onClick={() => toggleDir(dirPath)}
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -129,14 +167,33 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
                                             background: 'rgba(255,255,255,0.02)'
                                         }}
                                     >
-                                        {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-                                        <Folder size={12} />
-                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {dirPath}
-                                        </span>
-                                        <span style={{ marginLeft: 'auto', opacity: 0.5 }}>
-                                            {files.length}
-                                        </span>
+                                        <div
+                                            onClick={() => onToggleFilesViewed(mr.id, files.map(f => f.file.filename), !allViewed)}
+                                            style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }}
+                                            title={allViewed ? "Mark folder as unviewed" : "Mark folder as viewed"}
+                                        >
+                                            {allViewed ? (
+                                                <CheckCircle2 size={12} color="#4caf50" />
+                                            ) : someViewed ? (
+                                                <Circle size={12} color="#4caf50" fill='#4caf50' fillOpacity={0.2} />
+                                            ) : (
+                                                <Circle size={12} color="#444" />
+                                            )}
+                                        </div>
+
+                                        <div
+                                            onClick={() => toggleDir(dirPath)}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '4px', flexGrow: 1, overflow: 'hidden' }}
+                                        >
+                                            {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                            <Folder size={12} />
+                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {dirPath}
+                                            </span>
+                                            <span style={{ marginLeft: 'auto', opacity: 0.5 }}>
+                                                {files.length}
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
                                 {!isCollapsed && files.map(({ file, index }) => (
@@ -150,7 +207,30 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
                                             paddingLeft: isRootLevel ? undefined : '24px'
                                         }}
                                     >
-                                        {file.viewed ? <CheckCircle2 size={14} color="#4caf50" /> : <Circle size={14} color="#444" />}
+                                        {/* Use existing toggle logic? ReviewModule doesn't pass individual toggle here, but app has global toggle via context or props? 
+                                            Actually ReviewSidebarItem click is just selection. 
+                                            The individual toggle is inside the item or handled by keyboard in App.tsx. 
+                                            But wait, look at ReviewSidebar.tsx original code.
+                                            It renders CheckCircle/Circle but no onClick handler for it!
+                                            The user can only toggle via keyboard (Enter) or maybe clicking the icon?
+                                            Original:
+                                            {file.viewed ? <CheckCircle2 size={14} color="#4caf50" /> : <Circle size={14} color="#444" />}
+                                            It seems it wasn't clickable in the sidebar before? Assuming yes based on code.
+                                            Wait, MrDetail had a clickable toggle. ReviewSidebar did not.
+                                            Let's make it clickable here too if we can, or just stick to folder toggle. 
+                                            App.tsx passes `toggleFileViewed`? No, ReviewSidebar only gets `onSelectFile`.
+                                            So individual toggle in sidebar is not requested, but folder toggle is.
+                                            However, `onToggleFilesViewed` can be used for single file too.
+                                        */}
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onToggleFilesViewed(mr.id, [file.filename]);
+                                            }}
+                                            style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                                        >
+                                            {file.viewed ? <CheckCircle2 size={14} color="#4caf50" /> : <Circle size={14} color="#444" />}
+                                        </div>
                                         <span style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {file.filename.split('/').pop()}
                                         </span>
