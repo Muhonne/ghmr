@@ -1,3 +1,8 @@
+# 0.4.4
+
+- feat: implement folder viewed toggle and file filter
+- Show last pushed timestamp next to commit count
+
 # 0.4.3
 
 - Fix bouncing icon gap and add mouse back button navigation
