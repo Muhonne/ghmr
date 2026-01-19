@@ -1,3 +1,7 @@
+# 0.4.5
+
+- Remove file filtering functionality from review sidebar
+
 # 0.4.4
 
 - feat: implement folder viewed toggle and file filter
