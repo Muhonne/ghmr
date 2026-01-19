@@ -27,8 +27,8 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
     onToggleFilesViewed
 }) => {
     const activeFileRef = useRef<HTMLDivElement>(null);
+
     const [collapsedDirs, setCollapsedDirs] = useState<Set<string>>(new Set());
-    const [filterText, setFilterText] = useState('');
 
     useEffect(() => {
         if (activeFileRef.current) {
@@ -43,11 +43,10 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
     const groupedFiles = useMemo(() => {
         const groups: GroupedFiles = {};
 
-        // Filter files first
-        const filteredFiles = mr.files.map((file, index) => ({ file, index }))
-            .filter(({ file }) => file.filename.toLowerCase().includes(filterText.toLowerCase()));
+        // Use all files
+        const filesToGroup = mr.files.map((file, index) => ({ file, index }));
 
-        filteredFiles.forEach(({ file, index }) => {
+        filesToGroup.forEach(({ file, index }) => {
             const parts = file.filename.split('/');
             const dirPath = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
 
@@ -65,7 +64,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
         });
 
         return { groups, sortedKeys };
-    }, [mr.files, filterText]);
+    }, [mr.files]);
 
     const toggleDir = (dir: string) => {
         setCollapsedDirs(prev => {
@@ -101,38 +100,11 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
             overflow: 'hidden',
             width: 'var(--file-list-width)',
             flexShrink: 0,
-            paddingTop: '0', // Changed from 60px to accommodate sticky header
+            paddingTop: '0',
             borderRight: '1px solid var(--border-color)',
             display: 'flex',
             flexDirection: 'column'
         }}>
-            {/* Filter Input */}
-            <div style={{
-                padding: '12px',
-                borderBottom: '1px solid var(--border-color)',
-                background: 'var(--bg-app)',
-                position: 'sticky',
-                top: 0,
-                zIndex: 10
-            }}>
-                <input
-                    type="text"
-                    placeholder="Filter files..."
-                    value={filterText}
-                    onChange={(e) => setFilterText(e.target.value)}
-                    style={{
-                        width: '100%',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        color: 'var(--text-primary)',
-                        fontSize: '13px',
-                        outline: 'none'
-                    }}
-                />
-            </div>
-
             <div style={{
                 height: '100%',
                 overflowY: 'auto',
