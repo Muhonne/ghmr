@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState, useRef, useCallback } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Search, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { DiffView, DiffModeEnum } from '@git-diff-view/react';
 import { DiffFile, generateDiffFile } from '@git-diff-view/file';
 import '@git-diff-view/react/styles/diff-view.css';
@@ -234,8 +234,201 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
         }
     };
 
-    // Ref for the diff container
+
+    // Search functionality
+    const [isSearchVisible, setIsSearchVisible] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
+    const [searchMatchIndex, setSearchMatchIndex] = useState(0);
+    const [searchMatchCount, setSearchMatchCount] = useState(0);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const searchMatchesRef = useRef<HTMLElement[]>([]);
     const diffContainerRef = useRef<HTMLDivElement>(null);
+
+    // Helper to safely restore styles
+    const restoreElementStyle = useCallback((el: HTMLElement) => {
+        if (el.dataset.originalBg !== undefined) {
+            el.style.backgroundColor = el.dataset.originalBg;
+            delete el.dataset.originalBg;
+        }
+
+        if (el.dataset.originalTransition !== undefined) {
+            el.style.transition = el.dataset.originalTransition;
+            delete el.dataset.originalTransition;
+        }
+    }, []);
+
+    // Helper to apply highlight while saving original style
+    const highlightElementStyle = useCallback((el: HTMLElement, color: string) => {
+        if (el.dataset.originalBg === undefined) {
+            el.dataset.originalBg = el.style.backgroundColor;
+        }
+        if (el.dataset.originalTransition === undefined) {
+            el.dataset.originalTransition = el.style.transition;
+        }
+        el.style.backgroundColor = color;
+        el.style.transition = 'background-color 0.2s';
+    }, []);
+
+    const clearHighlights = useCallback(() => {
+        if (searchMatchesRef.current) {
+            searchMatchesRef.current.forEach(el => {
+                restoreElementStyle(el);
+                Array.from(el.children).forEach(child => {
+                    if (child instanceof HTMLElement) {
+                        restoreElementStyle(child);
+                    }
+                });
+            });
+        }
+        searchMatchesRef.current = [];
+        setSearchMatchCount(0);
+        setSearchMatchIndex(0);
+    }, [restoreElementStyle]);
+
+    const closeSearch = useCallback(() => {
+        setIsSearchVisible(false);
+        setSearchValue('');
+        clearHighlights();
+    }, [clearHighlights]);
+
+    useEffect(() => {
+        closeSearch();
+    }, [currentIndex, closeSearch]);
+
+    const highlightMatch = useCallback((index: number, matches: HTMLElement[]) => {
+        matches.forEach((el, idx) => {
+            // Restore everyone first to ensure clean slate if they were highlighted
+            restoreElementStyle(el);
+            Array.from(el.children).forEach(child => {
+                if (child instanceof HTMLElement) {
+                    restoreElementStyle(child);
+                }
+            });
+
+            if (idx === index) {
+                const highlightColor = 'rgba(255, 215, 0, 0.5)'; // More visible yellow
+
+                highlightElementStyle(el, highlightColor);
+
+                // Also highlight children to ensure visibility over cell backgrounds
+                Array.from(el.children).forEach(child => {
+                    if (child instanceof HTMLElement) {
+                        highlightElementStyle(child, highlightColor);
+                    }
+                });
+
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }, [highlightElementStyle, restoreElementStyle]);
+
+    const performSearch = useCallback((text: string) => {
+        // Clear previous highlights first only if we are re-searching
+        // We do this by manually resetting styles on known refs, but strictly speaking
+        // finding new matches overlaps.
+
+        // Reset old matches styles
+        searchMatchesRef.current.forEach(el => {
+            restoreElementStyle(el);
+            Array.from(el.children).forEach(child => {
+                if (child instanceof HTMLElement) {
+                    restoreElementStyle(child);
+                }
+            });
+        });
+
+        if (!text || !diffContainerRef.current) {
+            searchMatchesRef.current = [];
+            setSearchMatchCount(0);
+            return;
+        }
+
+        // We search in TR elements of the diff viewer
+        const rows = Array.from(diffContainerRef.current.querySelectorAll('tr'));
+        const lowerText = text.toLowerCase();
+
+        const matches = rows.filter(row => {
+            return row.textContent?.toLowerCase().includes(lowerText);
+        });
+
+        searchMatchesRef.current = matches;
+        setSearchMatchCount(matches.length);
+
+        if (matches.length > 0) {
+            setSearchMatchIndex(0);
+            highlightMatch(0, matches);
+        } else {
+            setSearchMatchIndex(0);
+        }
+    }, [highlightMatch]);
+
+    const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchValue(e.target.value);
+    };
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchValue.length >= 3) {
+                performSearch(searchValue);
+            } else {
+                performSearch('');
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchValue, performSearch]);
+
+    const navigateSearch = (direction: 'next' | 'prev') => {
+        if (searchMatchesRef.current.length === 0) return;
+
+        let newIndex = direction === 'next' ? searchMatchIndex + 1 : searchMatchIndex - 1;
+        if (newIndex >= searchMatchesRef.current.length) newIndex = 0;
+        if (newIndex < 0) newIndex = searchMatchesRef.current.length - 1;
+
+        setSearchMatchIndex(newIndex);
+        highlightMatch(newIndex, searchMatchesRef.current);
+    };
+
+    const onSearchKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            navigateSearch(e.shiftKey ? 'prev' : 'next');
+        }
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+                e.preventDefault();
+                setIsSearchVisible(true);
+            }
+
+            if (isSearchVisible) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeSearch();
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigateSearch(e.shiftKey ? 'prev' : 'next');
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown, { capture: true });
+        return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+    }, [isSearchVisible, closeSearch, navigateSearch]);
+
+    useEffect(() => {
+        if (isSearchVisible && searchInputRef.current) {
+            searchInputRef.current.focus();
+            searchInputRef.current.select();
+        } else if (!isSearchVisible) {
+            // When closing, return focus to container? Optionally.
+        }
+    }, [isSearchVisible]);
+
 
     // Click handler for line numbers - copies filename:line content
     const handleLineNumberClick = useCallback((e: Event) => {
@@ -307,6 +500,58 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                 overflow: 'hidden',
                 position: 'relative'
             }}>
+                {isSearchVisible && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '40px', // Adjusted to not overlap with standard scrollbars too much or header actions
+                        zIndex: 100,
+                        background: '#1c2128',
+                        border: '1px solid #30363d',
+                        borderRadius: '6px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '4px',
+                        gap: '8px'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', gap: '8px' }}>
+                            <Search size={14} color="#8b949e" />
+                            <input
+                                ref={searchInputRef}
+                                type="text"
+                                value={searchValue}
+                                onChange={onSearchChange}
+                                onKeyDown={onSearchKeyDown}
+                                placeholder="Find..."
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'white',
+                                    outline: 'none',
+                                    fontSize: '13px',
+                                    width: '160px'
+                                }}
+                            />
+                            <span style={{ fontSize: '12px', color: '#8b949e', minWidth: '40px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                {searchMatchCount > 0 ? `${searchMatchIndex + 1}/${searchMatchCount}` : searchValue ? '0/0' : ''}
+                            </span>
+                        </div>
+                        <div style={{ height: '20px', width: '1px', background: '#30363d' }} />
+                        <div style={{ display: 'flex' }}>
+                            <button onClick={() => navigateSearch('prev')} style={{ padding: '4px', color: '#c9d1d9' }} title="Previous match (Shift+Enter)">
+                                <ArrowUp size={14} />
+                            </button>
+                            <button onClick={() => navigateSearch('next')} style={{ padding: '4px', color: '#c9d1d9' }} title="Next match (Enter)">
+                                <ArrowDown size={14} />
+                            </button>
+                            <button onClick={closeSearch} style={{ padding: '4px', color: '#c9d1d9' }} title="Close (Esc)">
+                                <X size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <ReviewSidebar
                     mr={mr}
                     currentIndex={currentIndex}

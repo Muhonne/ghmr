@@ -110,7 +110,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
                 overflowY: 'auto',
                 direction: 'rtl',
                 scrollbarGutter: 'stable',
-                paddingTop: '10px'
+                paddingTop: '60px'
             }}>
                 <div style={{ direction: 'ltr' }}>
                     {groupedFiles.sortedKeys.map(dirPath => {

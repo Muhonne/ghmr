@@ -397,10 +397,14 @@ export default function App() {
                 return;
             }
 
-            // Global shortcut: Cmd+R to refresh (only in list view, blocked while loading)
             if (view === 'list' && (e.metaKey || e.ctrlKey) && e.key === 'r') {
                 e.preventDefault();
                 if (!loading) fetchMrs();
+                return;
+            }
+
+            // Ignore navigation shortcuts if user is typing in an input
+            if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
                 return;
             }
 
