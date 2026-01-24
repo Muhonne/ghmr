@@ -1,3 +1,7 @@
+# 0.4.6
+
+- feat: implement find in file functionality in review viewer
+
 # 0.4.5
 
 - Remove file filtering functionality from review sidebar
