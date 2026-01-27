@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion'
 import { MergeRequest, View, User, CIStatus, CheckRun, Workflow } from './types'
 import { MainLayout } from './components/templates/MainLayout'
 import { MrList } from './components/organisms/MrList'
+import { HistoryList } from './components/organisms/HistoryList'
 import { MrDetail } from './components/organisms/MrDetail'
 import { ReviewModule } from './components/organisms/ReviewModule'
 import { ReviewCompleteModal } from './components/molecules/ReviewCompleteModal'
@@ -20,7 +21,9 @@ export default function App() {
     const [isResizing, setIsResizing] = useState(false)
     const [user, setUser] = useState<User | null>(null)
     const [mrs, setMrs] = useState<MergeRequest[]>([])
+    const [historyMrs, setHistoryMrs] = useState<MergeRequest[]>([])
     const [loading, setLoading] = useState(false)
+    const [historyLoading, setHistoryLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [selectedMrId, setSelectedMrId] = useState<number | null>(null)
     const [view, setView] = useState<View>('settings')
@@ -31,6 +34,7 @@ export default function App() {
     const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([])
     const [showReviewComplete, setShowReviewComplete] = useState(false)
     const reviewScrollRef = useRef<HTMLDivElement | null>(null)
+    const mainScrollRef = useRef<HTMLDivElement | null>(null)
     const sidebarWidthRef = useRef(0)
     // Refs for continuous scroll
     const scrollDirectionRef = useRef<number>(0) // -1 = up, 0 = stopped, 1 = down
@@ -176,6 +180,70 @@ export default function App() {
         }
     }, [octokit])
 
+    const fetchHistory = useCallback(async () => {
+        if (!octokit) return
+        setHistoryLoading(true)
+        setError(null)
+        try {
+            const { data: authenticatedUser } = await octokit.rest.users.getAuthenticated()
+
+            // Limit to 100 most recent closed PRs
+            const { data: pulls } = await octokit.rest.search.issuesAndPullRequests({
+                q: `is:pr is:closed author:${authenticatedUser.login}`,
+                sort: 'updated',
+                order: 'desc',
+                per_page: 100
+            })
+
+            const results = await Promise.all(pulls.items.map(async (pull: any): Promise<MergeRequest | null> => {
+                try {
+                    const [owner, repo] = pull.repository_url.split('/').slice(-2)
+
+                    // We need details for lines changed (stats)
+                    const { data: prDetails } = await octokit.rest.pulls.get({
+                        owner,
+                        repo,
+                        pull_number: pull.number
+                    })
+
+                    return {
+                        id: pull.id,
+                        number: pull.number,
+                        title: pull.title,
+                        author: pull.user.login,
+                        created_at: pull.created_at,
+                        repository: `${owner}/${repo}`,
+                        base_ref: prDetails.base.ref,
+                        head_ref: prDetails.head.ref,
+                        head_sha: prDetails.head.sha,
+                        status: prDetails.merged ? 'merged' : 'closed', // Distinguish merged vs closed
+                        files: [], // minimal data for history
+                        commits: [],
+                        stats: {
+                            additions: prDetails.additions,
+                            deletions: prDetails.deletions
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Failed to map History MR #${pull?.number}:`, e);
+                    return null;
+                }
+            }))
+
+            const mappedHistory = results.filter((mr: MergeRequest | null): mr is MergeRequest => mr !== null)
+            setHistoryMrs(mappedHistory)
+        } catch (error: any) {
+            console.error("History API Error:", error)
+            // Non-blocking error for history, just log it or set generic error
+            if (error.status === 401) {
+                setError("Authentication failed.")
+                setView('settings')
+            }
+        } finally {
+            setHistoryLoading(false)
+        }
+    }, [octokit])
+
     const handleTriggerWorkflow = useCallback(async (mr: MergeRequest, workflowId: number) => {
         if (!octokit) return;
         setIsTriggering(true);
@@ -200,6 +268,12 @@ export default function App() {
     useEffect(() => {
         if (token) fetchMrs()
     }, [token, fetchMrs])
+
+    useEffect(() => {
+        if (view === 'history' && token) {
+            fetchHistory()
+        }
+    }, [view, token, fetchHistory])
 
     const handleSaveConfig = async (newToken?: string, newFontSize?: number, newWidth?: number, newPollInterval?: number) => {
         try {
@@ -448,7 +522,21 @@ export default function App() {
                     e.preventDefault();
                     setCurrentFileIndex(p => getPrevFileIndex(p, visualFileOrder));
                 }
-                // PageUp/PageDown: allow native scroll behavior (don't preventDefault)
+
+                if (e.key === 'PageUp') {
+                    e.preventDefault();
+                    if (mainScrollRef.current) {
+                        mainScrollRef.current.scrollBy({ top: -mainScrollRef.current.clientHeight, behavior: 'smooth' });
+                    }
+                }
+
+                if (e.key === 'PageDown') {
+                    e.preventDefault();
+                    if (mainScrollRef.current) {
+                        mainScrollRef.current.scrollBy({ top: mainScrollRef.current.clientHeight, behavior: 'smooth' });
+                    }
+                }
+
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     setView('review');
@@ -580,6 +668,7 @@ export default function App() {
             loading={loading}
             fetchMrs={fetchMrs}
             onStartReview={startReview}
+            scrollRef={mainScrollRef}
         >
             <AnimatePresence mode="wait">
                 {view === 'list' && (
@@ -597,6 +686,14 @@ export default function App() {
                         }}
                         setView={setView}
                         selectedIndex={currentMrIndex}
+                    />
+                )}
+                {view === 'history' && (
+                    <HistoryList
+                        mrs={historyMrs}
+                        loading={historyLoading}
+                        onRefresh={fetchHistory}
+                        setView={setView}
                     />
                 )}
                 {view === 'detail' && selectedMr && (

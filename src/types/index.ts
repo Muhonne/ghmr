@@ -41,6 +41,10 @@ export interface MergeRequest {
     files: MRFile[]
     commits?: Commit[]
     ci_status?: CIStatus
+    stats?: {
+        additions: number
+        deletions: number
+    }
 }
 
 export interface MRFile {
@@ -58,6 +62,6 @@ export interface User {
     avatar_url: string
 }
 
-export type View = 'list' | 'detail' | 'review' | 'settings'
+export type View = 'list' | 'detail' | 'review' | 'settings' | 'history'
 
 

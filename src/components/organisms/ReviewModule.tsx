@@ -305,18 +305,24 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                 }
             });
 
+            // Define colors - more subtle
+            // Active: Distinct but translucent yellow/orange
+            const activeColor = 'rgba(210, 150, 20, 0.35)';
+            // Inactive: Very subtle yellow tint
+            const inactiveColor = 'rgba(210, 150, 20, 0.1)';
+
+            const colorToApply = idx === index ? activeColor : inactiveColor;
+
+            highlightElementStyle(el, colorToApply);
+
+            // Also highlight children to ensure visibility over cell backgrounds
+            Array.from(el.children).forEach(child => {
+                if (child instanceof HTMLElement) {
+                    highlightElementStyle(child, colorToApply);
+                }
+            });
+
             if (idx === index) {
-                const highlightColor = 'rgba(255, 215, 0, 0.5)'; // More visible yellow
-
-                highlightElementStyle(el, highlightColor);
-
-                // Also highlight children to ensure visibility over cell backgrounds
-                Array.from(el.children).forEach(child => {
-                    if (child instanceof HTMLElement) {
-                        highlightElementStyle(child, highlightColor);
-                    }
-                });
-
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });

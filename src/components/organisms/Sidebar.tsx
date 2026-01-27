@@ -1,8 +1,10 @@
+
 import {
     List,
     Settings,
     PanelLeftOpen,
-    PanelLeftClose
+    PanelLeftClose,
+    History
 } from 'lucide-react';
 import { SidebarItem } from '../molecules/SidebarItem';
 import { KeyboardShortcutsPopover } from '../molecules/KeyboardShortcuts';
@@ -65,6 +67,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     isActive={view === 'list'}
                     isMinified={isMinified}
                     onClick={() => setView('list')}
+                />
+
+                <SidebarItem
+                    icon={History}
+                    label="History"
+                    isActive={view === 'history'}
+                    isMinified={isMinified}
+                    onClick={() => setView('history')}
                 />
 
                 <SidebarItem

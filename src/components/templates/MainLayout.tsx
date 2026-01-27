@@ -16,6 +16,7 @@ interface MainLayoutProps {
     fetchMrs: () => void;
     onStartReview: () => void;
     children: React.ReactNode;
+    scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -30,7 +31,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     loading,
     fetchMrs,
     onStartReview,
-    children
+    children,
+    scrollRef
 }) => {
     return (
         <div className="app-container">
@@ -71,7 +73,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     </button>
                 )}
 
-                <div style={{ flexGrow: 1, overflowY: 'auto', position: 'relative', height: '100%' }}>
+                <div ref={scrollRef} style={{ flexGrow: 1, overflowY: 'auto', position: 'relative', height: '100%' }}>
                     {children}
                 </div>
             </main>
