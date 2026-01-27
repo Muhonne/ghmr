@@ -1,3 +1,7 @@
+# 0.4.7
+
+- feat: Add history view with repo grouping and stats
+
 # 0.4.6
 
 - feat: implement find in file functionality in review viewer
