@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { MergeRequest, View } from '../../types';
-import { GitMerge, GitPullRequestClosed, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
+import { GitMerge, GitPullRequestClosed, ChevronDown, ChevronRight } from 'lucide-react';
+
 
 interface HistoryListProps {
     mrs: MergeRequest[];
