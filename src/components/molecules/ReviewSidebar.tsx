@@ -158,9 +158,10 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
                                             style={{ display: 'flex', alignItems: 'center', gap: '4px', flexGrow: 1, overflow: 'hidden' }}
                                         >
                                             {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-                                            <Folder size={12} />
-                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {dirPath}
+                                            <Folder size={12} color="#fff" />
+                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#fff' }}>
+                                                {dirPath.split('/').slice(0, -1).join('/')}{dirPath.includes('/') ? '/' : ''}
+                                                <span style={{ fontWeight: 'bold' }}>{dirPath.split('/').pop()}</span>
                                             </span>
                                             <span style={{ marginLeft: 'auto', opacity: 0.5 }}>
                                                 {files.length}

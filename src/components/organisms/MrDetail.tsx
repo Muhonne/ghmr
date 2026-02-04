@@ -430,8 +430,11 @@ export const MrDetail: React.FC<MrDetailProps> = ({
                                         style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 1 }}
                                     >
                                         {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                                        <Folder size={14} color="var(--text-secondary)" />
-                                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{dirPath}</span>
+                                        <Folder size={14} color="#fff" />
+                                        <span style={{ fontSize: '13px', color: '#fff' }}>
+                                            {dirPath.split('/').slice(0, -1).join('/')}{dirPath.includes('/') ? '/' : ''}
+                                            <span style={{ fontWeight: 'bold' }}>{dirPath.split('/').pop()}</span>
+                                        </span>
                                         <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
                                             {files.length} file{files.length !== 1 ? 's' : ''}
                                         </span>

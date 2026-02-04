@@ -198,6 +198,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
             // Initialize theme and build lines
             file.init();
             file.buildSplitDiffLines();
+            file.buildUnifiedDiffLines();
 
             return file;
         } catch (error) {
@@ -700,7 +701,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                                     {diffFile && (
                                         <DiffView
                                             diffFile={diffFile}
-                                            diffViewMode={DiffModeEnum.Split}
+                                            diffViewMode={(!oldValue || !newValue) ? DiffModeEnum.Unified : DiffModeEnum.Split}
                                             diffViewTheme="dark"
                                             diffViewHighlight
                                             diffViewWrap
