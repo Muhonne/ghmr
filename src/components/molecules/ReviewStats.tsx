@@ -3,6 +3,7 @@ import { MRFile } from '../../types';
 
 interface ReviewStatsProps {
     files: MRFile[];
+    totalStats?: { additions: number; deletions: number };
     compact?: boolean;
 }
 
@@ -16,26 +17,37 @@ export interface ReviewStatsData {
     totalFiles: number;
 }
 
-export const useReviewStats = (files: MRFile[]): ReviewStatsData => {
+export const useReviewStats = (files: MRFile[], totalStats?: { additions: number; deletions: number }): ReviewStatsData => {
     return useMemo(() => {
-        const totals = files.reduce((acc, file) => ({
+        const fileTotals = files.reduce((acc, file) => ({
             additions: acc.additions + (file.additions || 0),
             deletions: acc.deletions + (file.deletions || 0),
             viewedAdditions: acc.viewedAdditions + (file.viewed ? (file.additions || 0) : 0),
             viewedDeletions: acc.viewedDeletions + (file.viewed ? (file.deletions || 0) : 0)
         }), { additions: 0, deletions: 0, viewedAdditions: 0, viewedDeletions: 0 });
 
-        const totalLines = totals.additions + totals.deletions;
-        const viewedLines = totals.viewedAdditions + totals.viewedDeletions;
+        const additions = totalStats?.additions ?? fileTotals.additions;
+        const deletions = totalStats?.deletions ?? fileTotals.deletions;
+
+        const totalLines = additions + deletions;
+        const viewedLines = fileTotals.viewedAdditions + fileTotals.viewedDeletions;
         const viewedPercentage = totalLines > 0 ? Math.round((viewedLines / totalLines) * 100) : 0;
         const viewedFiles = files.filter(f => f.viewed).length;
 
-        return { ...totals, viewedPercentage, viewedFiles, totalFiles: files.length };
-    }, [files]);
+        return {
+            additions,
+            deletions,
+            viewedAdditions: fileTotals.viewedAdditions,
+            viewedDeletions: fileTotals.viewedDeletions,
+            viewedPercentage,
+            viewedFiles,
+            totalFiles: files.length
+        };
+    }, [files, totalStats]);
 };
 
-export const ReviewStats: React.FC<ReviewStatsProps> = ({ files, compact = false }) => {
-    const stats = useReviewStats(files);
+export const ReviewStats: React.FC<ReviewStatsProps> = ({ files, totalStats, compact = false }) => {
+    const stats = useReviewStats(files, totalStats);
 
     if (compact) {
         return (

@@ -583,7 +583,7 @@ export const ReviewModule: React.FC<ReviewModuleProps> = ({
                         zIndex: 10
                     }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <ReviewStats files={mr.files} compact />
+                            <ReviewStats files={mr.files} totalStats={mr.stats} compact />
                         </div>
                         <code style={{ color: 'white', fontSize: '16px', fontWeight: 500, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentFile?.filename}</code>
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>

@@ -204,9 +204,13 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
                                         >
                                             {file.viewed ? <CheckCircle2 size={14} color="#4caf50" /> : <Circle size={14} color="#444" />}
                                         </div>
-                                        <span style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <span style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexGrow: 1 }}>
                                             {file.filename.split('/').pop()}
                                         </span>
+                                        <div style={{ display: 'flex', gap: '4px', fontSize: '11px', opacity: 0.8, marginLeft: '8px' }}>
+                                            <span style={{ color: '#4caf50' }}>+{file.additions}</span>
+                                            <span style={{ color: '#f44336' }}>-{file.deletions}</span>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

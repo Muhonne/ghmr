@@ -50,7 +50,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
     const [showCommits, setShowCommits] = useState(false);
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
 
-    const { additions, deletions } = useReviewStats(mr.files);
+    const { additions, deletions } = useReviewStats(mr.files, mr.stats);
 
     // State for collapsed directories
     const [collapsedDirs, setCollapsedDirs] = useState<Set<string>>(new Set());
@@ -382,7 +382,7 @@ export const MrDetail: React.FC<MrDetailProps> = ({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '18px' }}>Files Changed ({mr.files.length})</h3>
-                <ReviewStats files={mr.files} />
+                <ReviewStats files={mr.files} totalStats={mr.stats} />
             </div>
 
             <div className="glass" style={{ borderRadius: '12px', overflow: 'hidden' }}>

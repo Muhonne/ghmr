@@ -151,7 +151,11 @@ export default function App() {
                             message: c.commit.message.split('\n')[0], // First line only
                             author: c.commit.author?.name || c.author?.login || 'Unknown',
                             date: c.commit.author?.date || ''
-                        }))
+                        })),
+                        stats: {
+                            additions: prDetails.additions,
+                            deletions: prDetails.deletions
+                        }
                     }
                 } catch (e) {
                     console.error(`Failed to map MR #${pull?.number}:`, e);
