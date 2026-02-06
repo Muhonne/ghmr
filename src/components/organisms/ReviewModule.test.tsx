@@ -9,13 +9,14 @@ vi.mock('@git-diff-view/file', () => ({
     generateDiffFile: vi.fn(() => ({
         init: vi.fn(),
         buildSplitDiffLines: vi.fn(),
+        buildUnifiedDiffLines: vi.fn(),
     })),
     DiffFile: vi.fn(),
 }));
 
 vi.mock('@git-diff-view/react', () => ({
     DiffView: () => <div data-testid="diff-view">DiffView Content</div>,
-    DiffModeEnum: { Split: 'split' },
+    DiffModeEnum: { Split: 'split', Unified: 'unified' },
 }));
 
 vi.mock('../molecules/ReviewSidebar', () => ({

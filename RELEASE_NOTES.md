@@ -1,3 +1,9 @@
+# 0.4.8
+
+- feat: improve line count accuracy and visibility
+- feat: improve folder styling and diff view mode selection
+- remove unused import
+
 # 0.4.7
 
 - feat: Add history view with repo grouping and stats
